@@ -1,0 +1,2641 @@
+
+        # This is a comment. It extends to the end of the line
+        GLOBAL {
+            COMMENTS        3;
+            LABELBREAK      1;
+            OUTPUTNAME      "src/TeleForth.asm";
+            INPUTNAME       "original/TeleForth.rom";
+            STARTADDR       $C000;
+            PAGELENGTH      0;                  # No paging
+            CPU             "6502";
+        };
+
+
+############################################################
+# Page 00
+############################################################
+label { addr  $00; size 2; name "BOT";       comment "RES"; };
+label { addr  $02; size 2; name "SECOND";    comment "RESB";    };
+
+label { addr  $28; size 1; name "SCRNB";     comment "??? Uniquement mis à jour par le mot SCROLL"; };
+
+label { addr $4D; size 2; name "hrs1"; };
+label { addr $51; size 2; name "hrs3"; };
+
+label { addr  $57; size 1; name "hrsfb"; };
+
+#label { addr  $06; size 2; name "ADTMP"; comment "Adresse travail";  };
+#label { addr  $08; size 2; name "ADPS";  comment "Adresse table Piste/Secteur"; };
+
+label { addr  $0080; size  2; name "BUFP";   comment "Pointeur sur tampon Forth pour lecture/écriture"; };
+label { addr  $008c; size  2; name "STACK";  comment "Pile des données (50 octets)"; };
+label { addr  $00c0; size  8; name "N"; };
+label { addr  $00c8; size  2; name "IP"; };
+label { addr  $00cb; size  2; name "W"; };
+label { addr  $00cd; size  2; name "UP"; };
+label { addr  $00cf; size  1; name "_XSAVE"; comment "Ajout de '_' pour ne pas confondre avec l'appel Stratsed XSAVE"; };
+
+# VARAPL2+09: Debut Table Globale            ($3000)
+# VARAPL2+11: Pointeur courant Table Globale ($3000)
+# VARAPL2+13: Limite Table Globale           ($3FFF)
+#
+# VARAPL2+15: Debut table locale             (SCEFIN)
+# VARAPL2+17: Fin table locale               (SCEFIN)
+
+
+############################################################
+# Page 01
+############################################################
+# Stack
+#label { addr  $100; size 256; name "BUFTRV"; };
+
+
+############################################################
+# Page 02
+############################################################
+label { addr  $0208; size 4; name "tabdrv"; };
+label { addr  $020C; size 1; name "drvdef"; };
+label { addr  $020D; size 1; name "flgtel"; };
+label { addr  $0211; size 1; name "timeS"; };
+label { addr  $0212; size 1; name "timeM"; };
+label { addr  $0213; size 1; name "timeH"; };
+
+label { addr  $0220; size 4; name "scrX";   };
+label { addr  $0224; size 4; name "scrY";   };
+#label { addr  $0228; size 4; name "SCRDX";  };
+#label { addr  $022C; size 4; name "SCRFX";  };
+#label { addr  $0230; size 4; name "SCRDY";  };
+#label { addr  $0234; size 4; name "SCRFY";  };
+#label { addr  $0248; size 4; name "FLGSCR"; };
+#label { addr  $0275; size 1; name "FLGKBD"; };
+#label { addr  $0278; size 1; name "KBDSHT"; };
+#label { addr  $0286; size 1; name "LPRX";   };
+#label { addr  $0287; size 1; name "LPRY";   };
+#label { addr  $0289; size 1; name "LPRFY";    comment "Nombre de lignes par page pour l'imprimante"; };
+#label { addr  $028B; size 1; name "LPRSY";    comment "N° de ligne pour le saut de    page"; };
+label { addr  $02AA; size 1; name "hrspat"; };
+label { addr  $02F4; size 3; name "vnmi";   };
+label { addr  $02fa; size 3; name "virq"; } ;
+label { addr  $02FD; size 2; name "vaplic"; };
+
+############################################################
+# Page 03
+############################################################
+
+#VIA 1
+#label { addr  $0300; size 1; name "V1DRB";  };
+#label { addr  $0301; size 1; name "V1DRA";  };
+#label { addr  $0302; size 1; name "V1DDRB"; };
+#label { addr  $0303; size 1; name "V1DDRA"; };
+
+#label { addr  $0304; size 2; name "V1T1";   };
+#label { addr  $0306; size 2; name "V1T1L";  };
+#label { addr  $0308; size 2; name "V1T2";   };
+
+#label { addr  $030b; size 1; name "V1ACR";  };
+#label { addr  $030c; size 1; name "V1PCR";  };
+#label { addr  $030d; size 1; name "V1IFR";  };
+#label { addr  $030e; size 1; name "V1ER";   };
+#label { addr  $030f; size 1; name "V1DRAB"; };
+
+
+#via2
+label { name "v2dra";     addr  $0321;   };
+
+############################################################
+# Page 04
+############################################################
+label { addr  $040C;         name "Exbnk";  };
+label { addr  $0414; size 3; name "vexbnk"; };
+label { addr  $0417; size 1; name "bnkcib"; };
+
+############################################################
+# Page 05
+############################################################
+label { addr  $0500;          name "drive";   };
+label { addr  $0501;          name "piste";   };
+label { addr  $0502;          name "secteu";  };
+label { addr  $0503;          name "rwbuf";   comment "Adresse tampon DOS pour lecture/écriture"; };
+label { addr  $0512;          name "errnb";   };
+label { addr  $0513;          name "saves";   };
+label { addr  $0517; size 12; name "bufnom";  };
+label { addr  $0528;          name "vasalo0"; };
+label { addr  $052c;          name "ftype";   };
+label { addr  $052d;          name "desalo";  };
+label { addr  $052f;          name "fisalo";  };
+label { addr  $0542; size  2; name "tampfc";  };
+label { addr  $0544; size  2; name "bitmfc";  };
+label { addr  $0548;          name "ficnum";  };
+label { addr  $0549;          name "nbfic";   };
+label { addr  $054c; size  2; name "xfield";  };
+label { addr  $0560; size  3; name "CallTel"; comment "Routine d'appel d'une fonction Telemon. Initialisé à: 00 00 60 00 par (ABORT)"; };
+
+############################################################
+#
+############################################################
+
+
+
+
+
+label { addr  $0563; size  3; name "AYX_addr";       comment "Utilisé pour le passage des registres A,X,Y pour les appels MON"; };
+label { addr  $0566; size  1; name "PIO_addr";       comment "Utilisé pour le passage du registre P pour les appels MON"; };
+
+label { addr  $0100; size   256; name "_TIB_"; };
+label { addr  $0800; size    64; name "_UAREA_";     comment "User Area (ex. CURRENT := $0822)"; };
+label { addr  $0840; size  1984; name "DOSBUFFERS";  comment "Tampons DOS pour 2 fichiers"; };
+label { addr  $1000; size  1028; name "_FIRST";      comment "Tampon pour 1 écran (FIRST)"; };
+label { addr  $1404; size $9ffc; name "RAM_START";   comment "Zone pour le dictionnaire (LIMIT) - 1er mot utilisateur à partir de $143C"; };
+
+#
+# Les valeurs par déaut sont initailisées à partir de la table en $fd50
+#
+# $1404: adresse DEFER pour ABORT
+# $1406: adresse DEFER pour NUMBER
+# $1408: adresse DEFER pour PROMPT
+# $140e: adresse DEFER pour ?TERMINAL
+# $1410: adresse DEFER pour KEY
+# $1412: adresse DEFER pour EMIT
+# $1414: structure du vocabulaire SOUNDS
+# $1418: structure du vocabulaire GRAFX
+# $141c: structure du vocabulaire WINDOWS
+# $1420: structure du vocabulaire IOS
+# $1424: adresse DEFER pour MINITEL
+# $1426: structure du vocabulaire EDITOR
+# $142a: structure du vocabulaire LIFE
+# $142e: adresse variable DXY
+# $1430: adresse variable NEWm
+# $1432: adresse variable OLDm
+# $1434: adresse variable WRKm
+# $1436: adresse variable org^
+# $1438: adresse variable mid^
+# $143a: adresse variable end^
+# $143c: début zone libre
+#
+#
+#
+# Vocabulaire:
+# CFA:
+#	(DODOES)
+# PFA:
+#	(DOVOC)
+#	ptr vers stucture du vocabulaire (PFA+4 pour les vocabulaires en RAM)
+#	ptr vers le VOC-LINK du vocabulaire précédent (ou 00,00)
+#	structure d'un vocabulaire:
+#		00-01: $81;$a0 (mot nul)
+#		02-03: NFA du dernier mot de ce vocabulaire
+#
+#
+# Vocabulaire fig-forth normal:
+# CFA:
+#	(DODOES)
+# PFA:
+#	(DOVOC)
+#	$81,$a0 (mot nul)
+#	NFA du dernier mot de ce dictionnaire
+#	ptr vers le vocabulaire précédent (ou 00,00 )
+#
+#
+
+#
+# Autres différences avec le Fig-Forth:
+#
+# Les valeurs après une instruction de type BRANCH sont des adresses absolues et
+# non des valeurs relatives comme pour le Fig-Forth
+#
+
+label { addr  $bb80; name "SCRTXT"; comment "Adresse de base de l'écran TEXT"; };
+
+label { addr  $c000; name "ORIGIN"; };
+
+range { start $c008; end $c00b; type wordtable; };
+range { start $c00c; end $c00d; type addrtable; };
+range { start $c00e; end $c01f; type wordtable; };
+range { start $c020; end $c021; type addrtable; };
+range { start $c022; end $c025; type wordtable; };
+range { start $c026; end $c027; type addrtable; };
+label { addr  $c00c; size  2; name "NTOP";         comment "adresse mot le plus récent: ROMend_nfa"; };
+label { addr  $c00e; size  2; name "BSCH"; };
+label { addr  $c010; size  2; name "UAREA"; };
+
+# $c012-c021 copié vers $0806 par COLD
+label { addr  $c012; size  2; name "PS0";          comment "(S0)"; };
+label { addr  $c014; size  2; name "R0";           comment "(R0)"; };
+label { addr  $c016; size  2; name "PTIB"; };
+label { addr  $c018; size  2; name "PWIDTH"; };
+label { addr  $c01a; size  2; name "PWARNING"; };
+label { addr  $c01c; size  2; name "PFENCE"; };
+label { addr  $c01e; size  2; name "PDP"; };
+label { addr  $c020; size  2; name "PVOCLINK";     comment "adresse VOC-LINK du vocabulaire le plus récent: LIFE-LINK"; };
+label { addr  $c022; size  4; name "SYSTEM"; };
+label { addr  $c026; size  2; name "PCOLD"; };
+label { addr  $c028;          name "PCOLD1"; };
+
+range { start $c048; end $c049; type addrtable; name "PWARM"; };
+label { addr  $c04a;          name "WARM1"; };
+
+label { addr  $c0b3; name "SETUP";  comment "Copie ACC mots de la pile vers N"; };
+
+range { start $c055; end $c059; type texttable; name "NOOP_nfa"; };
+range { start $c05a; end $c05d; type addrtable; };
+label { addr  $c05e; size    4; name "NEXT"; };  # Pour avoir des JMP NEXT+2
+range { start $c05e; end $c074; type code; };
+
+range { start $c077; end $c07e; type texttable; name "EXECUTE_nfa"; };
+range { start $c07f; end $c082; type addrtable; };
+label { addr  $c081; name "EXECUTE"; };
+
+range { start $c090; end $c093; type texttable; name "LIT_nfa"; };
+range { start $c094; end $c097; type addrtable; };
+label { addr  $c096 ; name "LIT"; };
+
+label { addr  $c0a9; name "PUSH"; };
+label { addr  $c0ab; name "PUT"; };
+
+label { addr  $c0c7; name "PPLOOP_pfa";  comment "(+LOOP)_pfa"; };
+label { addr  $c0f5; name "PLOOP_pfa";   comment "(LOOP)_pfa"; };
+label { addr  $c119; name "POF_pfa";     comment "(OF)_pfa"; };
+label { addr  $c12c; name "ZBRANCH_pfa"; comment "0BRANCH_pfa";  };
+label { addr  $c134; name "BUMP"; };
+label { addr  $c142; name "BRANCH_pfa"; };
+
+range { start $c150; end $c157; type texttable; name "PPLOOP_nfa";  comment "(+LOOP)_nfa"; };
+range { start $c158; end $c15b; type addrtable; };
+label { addr  $c15a;                            name "PPLOOP";      comment "(+LOOP)"; };
+
+range { start $c15c; end $c162; type texttable; name "PLOOP_nfa";   comment "(LOOP)_nfa"; };
+range { start $c163; end $c166; type addrtable; };
+label { addr  $c165;                            name "PLOOP";       comment "(LOOP)"; };
+
+range { start $c167; end $c16e; type texttable; name "ZBRANCH_nfa"; comment "0BRANCH_nfa"; };
+range { start $c16f; end $c172; type addrtable; };
+label { addr  $c171;                            name "ZBRANCH";     comment "0BRANCH"; };
+
+range { start $c173; end $c179; type texttable; name "BRANCH_nfa"; };
+range { start $c17a; end $c17d; type addrtable; };
+label { addr  $c17c ; name "BRANCH"; };
+
+range { start $c17e; end $c182; type texttable; name "POF_nfa";     comment "(OF)_nfa"; };
+range { start $c183; end $c186; type addrtable; };
+label { addr  $c185;                            name "POF";         comment "(OF)"; };
+
+range { start $c187; end $c18c; type texttable; name "POFQUOT_nfa"; comment "(OF\")_nfa"; };
+range { start $c18d; end $c190; type addrtable; };
+label { addr  $c18f;                            name "POFQUOT";     comment "(OF\")"; };
+range { start $c191; end $c1b8; type addrtable;};
+
+range { start $c1b9; end $c1bf; type texttable; name "ZLEAVE_nfa";  comment "?LEAVE_nfa"; };
+range { start $c1c0; end $c1c3; type addrtable; };
+label { addr  $c1c2;                            name "ZLEAVE";      comment "?LEAVE"; };
+label { addr  $c1cc; name "LEAVE_pfa"; };
+
+range { start $c1e3; end $c1e8; type texttable; name "LEAVE_nfa"; };
+range { start $c1e9; end $c1ec; type addrtable; };
+label { addr  $c1eb; name "LEAVE"; };
+
+range { start $c1ed; end $c1f1; type texttable; name "PDO_nfa";     comment "(DO)_nfa"; };
+range { start $c1f2; end $c1f5; type addrtable; };
+label { addr  $c1f4;                            name "PDO";         comment "(DO)"; };
+label { addr  $c202; name "POPTWO"; };
+label { addr  $c204; name "POP"; };
+
+range { start $c209; end $c20a; type texttable; name "I_nfa"; };
+range { start $c20b; end $c20e; type addrtable; };
+label { addr  $c20d; name "I"; };
+
+range { start $c21e; end $c21f; type texttable; name "R_nfa"; };
+range { start $c220; end $c223; type addrtable; };
+label { addr  $c222; name "R"; };
+
+range { start $c224; end $c225; type texttable; name "J_nfa"; };
+range { start $c226; end $c229; type addrtable; };
+label { addr  $c228; name "J"; };
+
+range { start $c239; end $c23e; type texttable; name "DIGIT_nfa"; };
+range { start $c23f; end $c242; type addrtable; };
+label { addr  $c241; name "DIGIT"; };
+
+
+range { start $c269; end $c26f; type texttable; name "PFIND_nfa";   comment "(FIND)_nfa"; };
+range { start $c270; end $c273; type addrtable; };
+label { addr  $c272;                            name "PFIND";       comment "(FIND)"; };
+range { start $c2ce; end $c2d0; type texttable; name "SEQUAL_nfa";  comment "S=_nfa"; };
+range { start $c2d1; end $c2d4; type addrtable; };
+label { addr  $c2d3;                            name "SEQUAL";      comment "S="; };
+
+range { start $c2f4; end $c2fb; type texttable; name "ENCLOSE_nfa"; };
+range { start $c2fc; end $c2ff; type addrtable; };
+label { addr  $c2fe; name "ENCLOSE"; };
+
+range { start $c34c; end $c351; type texttable; name "CMOVE_nfa"; };
+range { start $c352; end $c355; type addrtable; };
+label { addr  $c354; name "CMOVE"; };
+
+range { start $c374; end $c37a; type texttable; name "CMOVEFROM_nfa"; comment "CMOVE>_nfa"; };
+range { start $c37b; end $c37e; type addrtable; };
+label { addr  $c37d;                            name "CMOVEFROM";     comment "CMOVE>"; };
+
+range { start $c3b1; end $c3b3; type texttable; name "USTAR_nfa";     comment "U*_nfa"; };
+range { start $c3b4; end $c3b7; type addrtable; };
+label { addr  $c3b6;                            name "USTAR";         comment "U*"; };
+
+range { start $c3e7; end $c3e9; type texttable; name "USL_nfa";       comment "U/_nfa"; };
+range { start $c3ea; end $c3ed; type addrtable; };
+label { addr  $c3ec;                            name "USL";           comment "U/"; };
+
+range { start $c423; end $c426; type texttable; name "AND_nfa"; };
+range { start $c427; end $c42a; type addrtable; };
+label { addr  $c429;                            name "ANDforth"; comment "AND (pour éviter la confusion avec l'instruction AND du 6502 par XA)"; };
+
+range { start $c43a; end $c43c; type texttable; name "OR_nfa"; };
+range { start $c43d; end $c440; type addrtable; };
+label { addr  $c43f; name "OR"; };
+
+range { start $c450; end $c453; type texttable; name "XOR_nfa"; };
+range { start $c454; end $c457; type addrtable; };
+label { addr  $c456; name "XOR"; };
+
+range { start $c467; end $c46a; type texttable; name "NOT_nfa"; };
+range { start $c46b; end $c46e; type addrtable; };
+label { addr  $c46d ; name "NOT"; };
+
+range { start $c47d; end $c47f; type texttable; name "SEMIS_nfa";  comment ";S_nfa"; };
+range { start $c480; end $c483; type addrtable; };
+label { addr  $c482;                            name "SEMIS";      comment ";S"; };
+
+range { start $c48d; end $c490; type texttable; name "SPat_nfa";   comment "SP@_nfa"; };
+range { start $c491; end $c494; type addrtable; };
+label { addr  $c493;                            name "SPat";       comment "SP@"; };
+label { addr  $c496; name "PUSH0A"; };
+
+range { start $c49c; end $c49f; type texttable; name "SPstore_nfa";   comment "SP!_nfa"; };
+range { start $c4a0; end $c4a3; type addrtable; };
+label { addr  $c4a2;                            name "SPstore";       comment "SP!"; };
+
+range { start $c4ac; end $c4af; type texttable; name "RPSTORE_nfa";   comment "RP!_nfa"; };
+range { start $c4b0; end $c4b3; type addrtable; };
+label { addr  $c4b2;                            name "RPSTORE";       comment "RP!"; };
+label { addr  $c4b4;                            name "RPSTORE_pfa";   comment "Appelé par PWARM"; };
+
+range { start $c4c4; end $c4c7; type texttable; name "RPAT_nfa";      comment "RP@_nfa"; };
+range { start $c4c8; end $c4cb; type addrtable; };
+
+range { start $c4d8; end $c4da; type texttable; name "TWOSTAR_nfa";   comment "2*_nfa"; };
+range { start $c4db; end $c4de; type addrtable; };
+label { addr  $c4dd;                            name "TWOSTAR";       comment "2*"; };
+
+range { start $c4e6; end $c4e8; type texttable; name "TWOSL_nfa";     comment "2/_nfa"; };
+range { start $c4e9; end $c4ec; type addrtable; };
+label { addr  $c4eb;                            name "TWOSL";         comment "2/"; };
+
+range { start $c4f7; end $c4fa; type texttable; name "TWOPOWER_nfa";  comment "2**_nfa"; };
+range { start $c4fb; end $c4fe; type addrtable; };
+
+range { start $c524; end $c526; type texttable; name "ONEP_nfa";     comment "1+_nfa"; };
+range { start $c527; end $c52a; type addrtable; };
+label { addr  $c529;                            name "ONEP";     comment "1+"; };
+
+range { start $c534; end $c536; type texttable; name "ONES_nfa"; comment "1-_nfa"; };
+range { start $c537; end $c53a; type addrtable; };
+label { addr  $c539;                            name "ONES";     comment "1-"; };
+
+range { start $c546; end $c548; type texttable; name "TWOP_nfa"; comment "2+_nfa"; };
+range { start $c549; end $c54c; type addrtable; };
+label { addr  $c54b ;                           name "TWOP";     comment "2+"; };
+range { start $c54d; end $c552; type addrtable; };
+
+range { start $c553; end $c555; type texttable; name "TWOS_nfa"; comment "2-_nfa";  };
+range { start $c556; end $c559; type addrtable; };
+label { addr  $c558;                            name "TWOS";     comment "2-"; };
+range { start $c55a; end $c55f; type addrtable; };
+
+range { start $c560; end $c562; type texttable; name "TOR_nfa";  comment ">R_nfa"; };
+range { start $c563; end $c566; type addrtable; };
+label { addr  $c565 ;                           name "TOR";      comment ">R"; };
+
+range { start $c572; end $c574; type texttable; name "RFROM_nfa"; comment "R>_nfa"; };
+range { start $c575; end $c578; type addrtable; };
+label { addr  $c577 ;                           name "RFROM";     comment "R>"; };
+
+range { start $c584; end $c589; type texttable; name "DUPTOR_nfa"; comment "DUP>R_nfa"; };
+range { start $c58a; end $c58d; type addrtable; };
+label { addr  $c58c ;                           name "DUPTOR";     comment "DUP>R"; };
+
+range { start $c597; end $c59d; type texttable; name "RFROMDROP_nfa"; comment "R>DROP_nfa"; };
+range { start $c59e; end $c5a1; type addrtable; };
+label { addr  $c5a0;                            name "RFROMDROP";     comment "R>DROP"; };
+
+range { start $c5a7; end $c5a9; type texttable; name "ZEQUAL_nfa";    comment "0=_nfa"; };
+range { start $c5aa; end $c5ad; type addrtable; };
+label { addr  $c5ac ;                           name "ZEQUAL";        comment "0="; };
+
+range { start $c5bc; end $c5be; type texttable; name "ZLESS_nfa";     comment "0<_nfa"; };
+range { start $c5bf; end $c5c2; type addrtable; };
+label { addr  $c5c1 ;                           name "ZLESS";         comment "0<"; };
+
+range { start $c5ce; end $c5d0; type texttable; name "ZGREAT_nfa";    comment "0>_nfa"; };
+range { start $c5d1; end $c5d4; type addrtable; };
+label { addr  $c5d3 ;                           name "ZGREAT";        comment "0>"; };
+
+range { start $c5e5; end $c5e6; type texttable; name "EQUAL_nfa";     comment "=_nfa"; };
+range { start $c5e7; end $c5ea; type addrtable; };
+label { addr  $c5e9;                            name "EQUAL";         comment "="; };
+range { start $c5eb; end $c5f0; type addrtable; };
+
+range { start $c5f1; end $c5f2; type texttable; name "LESS_nfa";      comment "<_nfa"; };
+range { start $c5f3; end $c5f6; type addrtable; };
+label { addr  $c5f5;                            name "LESS";          comment "<"; };
+range { start $c5f7; end $c5fc; type addrtable; };
+
+range { start $c5fd; end $c5fe; type texttable; name "GREAT_nfa";     comment ">_nfa"; };
+range { start $c5ff; end $c602; type addrtable; };
+label { addr  $c601;                            name "GREAT";         comment ">"; };
+range { start $c603; end $c606; type addrtable; };
+
+range { start $c609; end $c60a; type texttable; name "SUB_nfa";       comment "-_nfa"; };
+range { start $c60b; end $c60e; type addrtable; };
+label { addr  $c60d;                            name "SUB";           comment "-"; };
+
+range { start $c61f; end $c620; type texttable; name "PLUS_nfa";      comment "+_nfa"; };
+range { start $c621; end $c624; type addrtable; };
+label { addr  $c623 ;                           name "PLUS";          comment "+"; };
+
+range { start $c635; end $c637; type texttable; name "DPLUS_nfa";     comment  "D+_nfa"; };
+range { start $c638; end $c63b; type addrtable; };
+label { addr  $c63a;                            name "DPLUS";         comment "D+"; };
+
+range { start $c658; end $c65d; type texttable; name "MINUS_nfa"; };
+range { start $c65e; end $c661; type addrtable; };
+label { addr  $c660; name "MINUS"; };
+
+range { start $c673; end $c679; type texttable; name "DMINUS_nfa"; };
+range { start $c67a; end $c67d; type addrtable; };
+label { addr  $c67c; name "DMINUS"; };
+
+range { start $c68c; end $c690; type texttable; name "DROP_nfa"; };
+range { start $c691; end $c694; type addrtable; };
+label { addr  $c693 ; name "DROP"; };
+
+range { start $c695; end $c698; type texttable; name "NIP_nfa"; };
+range { start $c699; end $c69c; type addrtable; };
+label { addr  $c69b; name "NIP"; };
+
+range { start $c6a8; end $c6ad; type texttable; name "TWODROP_nfa"; comment "2DROP_nfa"; };
+range { start $c6ae; end $c6b1; type addrtable; };
+label { addr  $c6b0;                            name "TWODROP";     comment "2DROP"; };
+
+range { start $c6b2; end $c6b6; type texttable; name "STOD_nfa"; comment "S->D_nfa"; };
+range { start $c6b7; end $c6ba; type addrtable; };
+label { addr  $c6b9;                            name "STOD";     comment "S->D"; };
+
+range { start $c6c5; end $c6c9; type texttable; name "DDUP_nfa"; comment "-DUP_nfa"; };
+range { start $c6ca; end $c6cd; type addrtable; };
+label { addr  $c6cc;                            name "DDUP";     comment "-DUP"; };
+
+range { start $c6e1; end $c6e4; type texttable; name "DUP_nfa"; };
+range { start $c6e5; end $c6e8; type addrtable; };
+label { addr  $c6e7 ; name "DUP"; };
+
+range { start $c6e9; end $c6ed; type texttable; name "OVER_nfa"; };
+range { start $c6ee; end $c6f1; type addrtable; };
+label { addr  $c6f0; name "OVER"; };
+
+range { start $c6fa; end $c6fe; type texttable; name "TWODUP_nfa"; comment "2DUP_nfa"; };
+range { start $c6ff; end $c702; type addrtable; };
+label { addr  $c701;                            name "TWODUP";     comment "2DUP"; };
+
+range { start $c710; end $c714; type texttable; name "PICK_nfa"; };
+range { start $c715; end $c718; type addrtable; };
+label { addr  $c717 ; name "PICK"; };
+
+range { start $c72c; end $c730; type texttable; name "SWAP_nfa"; };
+range { start $c731; end $c734; type addrtable; };
+label { addr  $c733; name "SWAP"; };
+
+range { start $c748; end $c74b; type texttable; name "ROT_nfa"; };
+range { start $c74c; end $c74f; type addrtable; };
+label { addr  $c74e ; name "ROT"; };
+
+range { start $c769; end $c76e; type texttable; name "TWOSWAP_nfa"; comment "2SWAP_nfa"; };
+range { start $c76f; end $c772; type addrtable; };
+range { start $c773; end $c77c; type  addrtable;};
+
+range { start $c77d; end $c781; type texttable; name "ROLL_nfa"; };
+range { start $c782; end $c785; type addrtable; };
+range { start $c786; end $c799; type addrtable; };
+
+range { start $c79a; end $c79c; type texttable; name "PSTORE_nfa";  comment "+!_nfa"; };
+range { start $c79d; end $c7a0; type addrtable; };
+label { addr  $c79f;                            name "PSTORE";      comment "+!"; };
+
+range { start $c7b7; end $c7bd; type texttable; name "TOGGLE_nfa"; };
+range { start $c7be; end $c7c1; type addrtable; };
+label { addr  $c7c0; name "TOGGLE"; };
+
+range { start $c7cb; end $c7cf; type texttable; name "CSET_nfa"; };
+range { start $c7d0; end $c7d3; type addrtable; };
+label { addr  $c7d2; name "CSET"; };
+
+range { start $c7dd; end $c7e1; type texttable; name "CRST_nfa"; };
+range { start $c7e2; end $c7e5; type addrtable; };
+label { addr  $c7e4; name "CRST"; };
+
+range { start $c7f1; end $c7f5; type texttable; name "CTST_nfa"; };
+range { start $c7f6; end $c7f9; type addrtable; };
+label { addr  $c7f8; name "CTST"; };
+
+range { start $c808; end $c80a; type texttable; name "CSTORE_nfa";   comment "C!_nfa"; };
+range { start $c80b; end $c80e; type addrtable; };
+label { addr  $c80d;                            name "CSTORE";       comment "C!"; };
+
+range { start $c816; end $c818; type texttable; name "CAT_nfa";      comment "C@_nfa"; };
+range { start $c819; end $c81c; type addrtable; };
+label { addr  $c81b;                            name "CAT";          comment "C@"; };
+
+range { start $c826; end $c82b; type texttable; name "COUNT_nfa"; };
+range { start $c82c; end $c82f; type addrtable; };
+label { addr  $c82e; name "COUNT"; };
+
+range { start $c83d; end $c83e; type texttable; name "STORE_nfa";    comment "!_nfa"; };
+range { start $c83f; end $c842; type addrtable; };
+label { addr  $c841;                            name "STORE";        comment "!"; };
+
+range { start $c854; end $c855; type texttable; name "AT_nfa";       comment "@_nfa"; };
+range { start $c856; end $c859; type addrtable; };
+label { addr  $c858;                            name "AT";           comment "@"; };
+
+range { start $c868; end $c86e; type texttable; name "WCOUNT_nfa"; };
+range { start $c86f; end $c872; type addrtable; };
+label { addr  $c871; name "WCOUNT"; };
+
+range { start $c887; end $c889; type texttable; name "TWOAT_nfa";    comment "2@_nfa"; };
+range { start $c88a; end $c88d; type addrtable; };
+range { start $c88e; end $c899; type addrtable; };
+
+range { start $c89a; end $c89c; type texttable; name "TWOSTORE_nfa"; comment "2!_nfa"; };
+range { start $c89d; end $c8a0; type addrtable; };
+label { addr  $c89f;                            name "TWOSTORE";     comment "2!"; };
+range { start $c8a1; end $c8ac; type addrtable; };
+
+range { start $c8ad; end $c8ae; type texttable; name "COLON_nfa"; comment ":_nfa"; };
+range { start $c8af; end $c8b2; type addrtable; };
+range { start $c8b3; end $c8c4; type addrtable; };
+label { addr $c8c5; name "DOCOL"; };
+
+range { start $c8da; end $c8e2; type texttable; name "CONSTANT_nfa"; };
+range { start $c8e3; end $c8e6; type addrtable; };
+label { addr  $c8e5; name "CONSTANT"; };
+range { start $c8e7; end $c8ee; type addrtable; };
+label { addr $c8ef; name "DOCON"; };
+
+range { start $c8fa; end $c8fb; type texttable; name "ZERO_nfa"; comment "0_nfa"; };
+range { start $c8fc; end $c8ff; type addrtable; };
+label { addr  $c8fe;                            name "ZERO";     comment "0"; };
+range { start $c900; end $c901; type wordtable; };
+
+range { start $c902; end $c903; type texttable; name "ONE_nfa";  comment "1_nfa"; };
+range { start $c904; end $c907; type addrtable; };
+label { addr  $c906;                            name "ONE";      comment "1"; };
+range { start $c908; end $c909; type wordtable; };
+
+range { start $c90a; end $c90b; type texttable; name "TWO_nfa";  comment "2_nfa"; };
+range { start $c90c; end $c90f; type addrtable; };
+label { addr  $c90e;                            name "TWO";      comment "2"; };
+range { start $c910; end $c911; type wordtable; };
+
+range { start $c912; end $c914; type texttable; name "BL_nfa"; };
+range { start $c915; end $c918; type addrtable; };
+label { addr  $c917; name "BL"; };
+range { start $c919; end $c91a; type wordtable; };
+
+range { start $c91b; end $c923; type texttable; name "VARIABLE_nfa"; };
+range { start $c924; end $c927; type addrtable; };
+range { start $c928; end $c935; type addrtable; };
+range { start $c936; end $c940; type code;      name "DOVAR"; };
+
+range { start $c941; end $c945; type texttable; name "USER_nfa"; };
+range { start $c946; end $c949; type addrtable; };
+range { start $c94a; end $c94d; type addrtable; };
+range { start $c94e; end $c95c; type code;      name "DOUSER"; };
+
+range { start $c95d; end $c962; type texttable; name "DOES_nfa"; comment "DOES>_nfa"; };
+range { start $c963; end $c966; type addrtable; };
+label { addr  $c965;                            name "DOES"; comment "DOES>"; };
+range { start $c967; end $c970; type addrtable; };
+label { addr  $c971; name "DODOES"; };
+
+range { start $c992; end $c994; type texttable; name "S0_nfa"; };
+range { start $c995; end $c998; type addrtable; };
+label { addr  $c997; name "S0"; };
+range { start $c999; end $c99a; type wordtable; };
+
+range { start $c99b; end $c99d; type texttable; name "R0_nfa"; };
+range { start $c99e; end $c9a1; type addrtable; };
+range { start $c9a2; end $c9a3; type wordtable; };
+
+range { start $c9a4; end $c9a7; type texttable; name "TIB_nfa"; };
+range { start $c9a8; end $c9ab; type addrtable; };
+label { addr  $c9aa; name "TIB"; };
+range { start $c9ac; end $c9ad; type wordtable; };
+
+range { start $c9ae; end $c9b3; type texttable; name "WIDTH_nfa"; };
+range { start $c9b4; end $c9b7; type addrtable; };
+label { addr  $c9b6; name "WIDTH"; };
+range { start $c9b8; end $c9b9; type wordtable; };
+
+range { start $c9ba; end $c9c1; type texttable; name "WARNING_nfa"; };
+range { start $c9c2; end $c9c5; type addrtable; };
+label { addr  $c9c4; name "WARNING"; };
+range { start $c9c6; end $c9c7; type wordtable; };
+
+range { start $c9c8; end $c9cd; type texttable; name "FENCE_nfa"; };
+range { start $c9ce; end $c9d1; type addrtable; };
+label { addr  $c9d0; name "FENCE"; };
+range { start $c9d2; end $c9d3; type wordtable; };
+
+range { start $c9d4; end $c9d6; type texttable; name "DP_nfa"; };
+range { start $c9d7; end $c9da; type addrtable; };
+label { addr  $c9d9; name "DP"; };
+range { start $c9db; end $c9dc; type wordtable; };
+
+range { start $c9dd; end $c9e5; type texttable; name "VOCLINK_nfa"; comment "VOC-LINK_nfa"; };
+range { start $c9e6; end $c9e9; type addrtable; };
+label { addr  $c9e8;                            name "VOCLINK";     comment "VOC-LINK"; };
+range { start $c9ea; end $c9eb; type wordtable; };
+
+range { start $c9ec; end $c9ef; type texttable; name "BLK_nfa"; };
+range { start $c9f0; end $c9f3; type addrtable; };
+label { addr  $c9f2; name "BLK"; };
+range { start $c9f4; end $c9f5; type wordtable; };
+
+range { start $c9f6; end $c9f8; type texttable; name "IN_nfa"; };
+range { start $c9f9; end $c9fc; type addrtable; };
+label { addr  $c9fb; name "IN"; };
+range { start $c9fd; end $c9fe; type wordtable; };
+
+range { start $c9ff; end $ca02; type texttable; name "OUT_nfa"; };
+range { start $ca03; end $ca06; type addrtable; };
+label { addr  $ca05; name "OUT"; };
+range { start $ca07; end $ca08; type wordtable; };
+
+range { start $ca09; end $ca0c; type texttable; name "SCR_nfa"; };
+range { start $ca0d; end $ca10; type addrtable; };
+label { addr  $ca0f; name "SCR"; };
+range { start $ca11; end $ca12; type wordtable; };
+
+range { start $ca13; end $ca1a; type texttable; name "CONTEXT_nfa"; };
+range { start $ca1b; end $ca1e; type addrtable; };
+label { addr  $ca1d; name "CONTEXT"; };
+range { start $ca1f; end $ca20; type wordtable; };
+
+range { start $ca21; end $ca28; type texttable; name "CURRENT_nfa"; };
+range { start $ca29; end $ca2c; type addrtable; };
+label { addr  $ca2b ; name "CURRENT"; };
+range { start $ca2d; end $ca2e; type wordtable; };
+
+range { start $ca2f; end $ca34; type texttable; name "STATE_nfa"; };
+range { start $ca35; end $ca38; type addrtable; };
+label { addr  $ca37; name "STATE"; };
+range { start $ca39; end $ca3a; type wordtable; };
+
+range { start $ca3b; end $ca3f; type texttable; name "BASE_nfa"; };
+range { start $ca40; end $ca43; type addrtable; };
+label { addr  $ca42; name "BASE"; };
+range { start $ca44; end $ca45; type wordtable; };
+
+range { start $ca46; end $ca49; type texttable; name "DPL_nfa"; };
+range { start $ca4a; end $ca4d; type addrtable; };
+label { addr  $ca4c; name "DPL"; };
+range { start $ca4e; end $ca4f; type wordtable; };
+
+range { start $ca50; end $ca53; type texttable; name "CSP_nfa"; };
+range { start $ca54; end $ca57; type addrtable; };
+label { addr  $ca56; name "CSP"; };
+range { start $ca58; end $ca59; type wordtable; };
+
+range { start $ca5a; end $ca5c; type texttable; name "RNUM_nfa"; comment "R#_nfa"; };
+range { start $ca5d; end $ca60; type addrtable; };
+label { addr  $ca5f;                            name "RNUM";     comment "R#"; };
+range { start $ca61; end $ca62; type wordtable; };
+
+range { start $ca63; end $ca66; type texttable; name "HLD_nfa"; };
+range { start $ca67; end $ca6a; type addrtable; };
+label { addr  $ca69; name "HLD"; };
+range { start $ca6b; end $ca6c; type wordtable; } ;
+
+range { start $ca6d; end $ca74; type texttable; name "PORIGIN_nfa"; comment "+ORIGIN_nfa"; };
+range { start $ca75; end $ca78; type addrtable; };
+label { addr  $ca77;                            name "PORIGIN";     comment "+ORIGIN"; };
+range { start $ca79; end $ca80; type addrtable; };
+
+range { start $ca81; end $ca85; type texttable; name "HERE_nfa"; };
+range { start $ca86; end $ca89; type addrtable; };
+label { addr  $ca88; name "HERE"; };
+range { start $ca8a; end $ca8f; type addrtable; };
+
+range { start $ca90; end $ca95; type texttable; name "ALLOT_nfa"; };
+range { start $ca96; end $ca99; type addrtable; };
+label { addr  $ca98; name "ALLOT"; };
+range { start $ca9a; end $ca9f; type addrtable; };
+
+range { start $caa0; end $caa2; type texttable; name "CCOMMA_nfa"; comment "C,_nfa"; };
+range { start $caa3; end $caa6; type addrtable; };
+label { addr  $caa5;                            name "CCOMMA";     comment "C,"; };
+range { start $caa7; end $cab0; type addrtable; };
+
+range { start $cab1; end $cab2; type texttable; name "COMMA_nfa"; comment ",_nfa"; };
+range { start $cab3; end $cab6; type addrtable; };
+label { addr  $cab5;                            name "COMMA"; comment ","; };
+range { start $cab7; end $cac0; type addrtable; };
+
+range { start $cac1; end $cac7; type texttable; name "LATEST_nfa"; };
+range { start $cac8; end $cacb; type addrtable; };
+label { addr  $caca; name "LATEST"; };
+range { start $cacc; end $cad3; type addrtable; };
+
+range { start $cad4; end $cadf; type texttable; name "DEFINITIONS_nfa"; };
+range { start $cae0; end $cae3; type addrtable; };
+label { addr  $cae2; name "DEFINITIONS"; };
+range { start $cae4; end $caed; type addrtable; };
+
+range { start $caee; end $caf7; type texttable; name "IMMEDIATE_nfa"; };
+range { start $caf8; end $cafb; type addrtable; };
+range { start $cafc; end $cb05; type addrtable; };
+
+range { start $cb06; end $cb0c; type texttable; name "SMUDGE_nfa"; };
+range { start $cb0d; end $cb10; type addrtable; };
+label { addr  $cb0f; name "SMUDGE"; };
+range { start $cb11; end $cb1a; type addrtable; };
+
+range { start $cb1b; end $cb23; type texttable; name "TRAVERSE_nfa"; };
+range { start $cb24; end $cb27; type addrtable; };
+label { addr  $cb26; name "TRAVERSE"; };
+range { start $cb28; end $cb3f; type addrtable; };
+
+range { start $cb40; end $cb43; type texttable; name "PFA_nfa"; };
+range { start $cb44; end $cb47; type addrtable; };
+label { addr  $cb46; name "PFA"; };
+range { start $cb48; end $cb53; type addrtable; };
+
+range { start $cb54; end $cb57; type texttable; name "NFA_nfa"; };
+range { start $cb58; end $cb5b; type addrtable; };
+label { addr  $cb5a; name "NFA"; };
+range { start $cb5c; end $cb69; type addrtable; };
+
+range { start $cb6a; end $cb6d; type texttable; name "CFA_nfa"; };
+range { start $cb6e; end $cb71; type addrtable; };
+label { addr  $cb70; name "CFA"; };
+range { start $cb72; end $cb75; type addrtable; };
+
+range { start $cb76; end $cb79; type texttable; name "LFA_nfa"; };
+range { start $cb7a; end $cb7d; type addrtable; };
+label { addr  $cb7c; name "LFA"; };
+range { start $cb7e; end $cb83; type addrtable; };
+
+range { start $cb84; end $cb8b; type texttable; name "BUILDS_nfa";        comment "<BUILDS_nfa"; };
+range { start $cb8c; end $cb8f; type addrtable; };
+label { addr  $cb8e;                            name "BUILDS";        comment "<BUILDS"; };
+range { start $cb90; end $cb95; type addrtable; };
+
+range { start $cb96; end $cb9d; type texttable; name "PSEMICODE_nfa"; comment "(;CODE)_nfa"; };
+range { start $cb9e; end $cba1; type addrtable; };
+label { addr  $cba0;                            name "PSEMICODE";     comment "(;CODE)"; };
+range { start $cba2; end $cbad; type addrtable; };
+
+range { start $cbae; end $cbb5; type texttable; name "RECURSE_nfa"; };
+range { start $cbb6; end $cbb9; type addrtable; };
+range { start $cbba; end $cbc5; type addrtable; };
+
+range { start $cbc6; end $cbcb; type texttable; name "SPACE_nfa"; };
+range { start $cbcc; end $cbcf; type addrtable; };
+label { addr  $cbce; name "SPACE"; };
+range { start $cbd0; end $cbd5; type addrtable; };
+
+range { start $cbd6; end $cbdc; type texttable; name "SPACES_nfa"; };
+range { start $cbdd; end $cbe0; type addrtable; };
+label { addr  $cbdf; name "SPACES"; };
+range { start $cbe1; end $cbf6; type addrtable; };
+
+range { start $cbf7; end $cbfb; type texttable; name "TYPE_nfa"; };
+range { start $cbfc; end $cbff; type addrtable; };
+label { addr  $cbfe; name "TYPE"; };
+range { start $cc00; end $cc15; type addrtable; };
+
+range { start $cc16; end $cc1a; type texttable; name "MOVE_nfa"; };
+range { start $cc1b; end $cc1e; type addrtable; };
+range { start $cc1f; end $cc36; type addrtable; };
+
+range { start $cc37; end $cc3b; type texttable; name "FILL_nfa"; };
+range { start $cc3c; end $cc3f; type addrtable; };
+label { addr  $cc3e; name "FILL"; };
+range { start $cc40; end $cc63; type addrtable; };
+
+range { start $cc64; end $cc69; type texttable; name "ERASE_nfa"; };
+range { start $cc6a; end $cc6d; type addrtable; };
+label { addr  $cc6c; name "ERASE"; };
+range { start $cc6e; end $cc73; type addrtable; };
+
+range { start $cc74; end $cc7a; type texttable; name "BLANKS_nfa"; };
+range { start $cc7b; end $cc7e; type addrtable; };
+label { addr  $cc7d; name "BLANKS"; };
+range { start $cc7f; end $cc84; type addrtable; };
+
+range { start $cc85; end $cc8e; type texttable; name "DTRAILING_nfa"; comment "-TRAILING_nfa"; };
+range { start $cc8f; end $cc92; type addrtable; };
+label { addr  $cc91;                            name "DTRAILING";     comment "-TRALING"; };
+range { start $cc93; end $ccb6; type addrtable; };
+
+range { start $ccb7; end $ccbc; type texttable; name "DEPTH_nfa"; };
+range { start $ccbd; end $ccc0; type addrtable; };
+label { addr  $ccbf; name "DEPTH"; };
+range { start $ccc1; end $ccce; type addrtable; };
+
+range { start $cccf; end $ccd2; type texttable; name "DPM_nfa"; comment "D+-_nfa"; };
+range { start $ccd3; end $ccd6; type addrtable; };
+label { addr  $ccd5;                            name "DPM";     comment "D+-"; };
+range { start $ccd7; end $cce0; type addrtable; };
+
+range { start $cce1; end $cce5; type texttable; name "DABS_nfa"; };
+range { start $cce6; end $cce9; type addrtable; };
+label { addr  $cce8; name "DABS"; };
+range { start $ccea; end $ccef; type addrtable; };
+
+range { start $ccf0; end $ccf2; type texttable; name "PM_nfa"; comment "+-_nfa"; };
+range { start $ccf3; end $ccf6; type addrtable; };
+label { addr  $ccf5;                            name "PM";     comment "+-"; };
+range { start $ccf7; end $cd00; type addrtable; };
+
+range { start $cd01; end $cd04; type texttable; name "ABS_nfa"; };
+range { start $cd05; end $cd08; type addrtable; };
+label { addr  $cd07; name "ABS"; };
+range { start $cd09; end $cd0e; type addrtable; };
+
+range { start $cd0f; end $cd12; type texttable; name "MAX_nfa"; };
+range { start $cd13; end $cd16; type addrtable; };
+label { addr  $cd15; name "MAX"; };
+range { start $cd17; end $cd24; type addrtable; };
+
+range { start $cd25; end $cd28; type texttable; name "MIN_nfa"; };
+range { start $cd29; end $cd2c; type addrtable; };
+label { addr  $cd2b; name "MIN"; };
+range { start $cd2d; end $cd3a; type addrtable; };
+
+range { start $cd3b; end $cd3d; type texttable; name "ULESS_nfa";  comment "U<_nfa"; };
+range { start $cd3e; end $cd41; type addrtable; };
+label { addr  $cd40;                            name "ULESS";      comment "U<"; };
+range { start $cd42; end $cd51; type addrtable; };
+
+range { start $cd52; end $cd57; type texttable; name "MSLMOD_nfa"; comment "M/MOD_nfa"; };
+range { start $cd58; end $cd5b; type addrtable; };
+label { addr  $cd5a;                            name "MSLMOD"; comment "M/MOD"; };
+range { start $cd5c; end $cd6f; type addrtable; };
+
+range { start $cd70; end $cd72; type texttable; name "MSL_nfa"; comment "M/_nfa"; };
+range { start $cd73; end $cd76; type addrtable; };
+label { addr  $cd75;                            name "MSL";     comment "M/"; };
+range { start $cd77; end $cd96; type addrtable; };
+
+range { start $cd97; end $cd9b; type texttable; name "SLMOD_nfa"; comment "/MOD_nfa"; };
+range { start $cd9c; end $cd9f; type addrtable; };
+label { addr  $cd9e;                            name "SLMOD"; comment "/MOD"; };
+range { start $cda0; end $cda9; type addrtable; };
+
+range { start $cdaa; end $cdab; type texttable; name "SLASH_nfa"; comment "/_nfa"; };
+range { start $cdac; end $cdaf; type addrtable; };
+label { addr  $cdae;                            name "SLASH"; comment "/"; };
+range { start $cdb0; end $cdb5; type addrtable; };
+
+range { start $cdb6; end $cdb9; type texttable; name "MOD_nfa"; };
+range { start $cdba; end $cdbd; type addrtable; };
+label { addr  $cdbc; name "MOD"; };
+range { start $cdbe; end $cdc3; type addrtable; };
+
+range { start $cdc4; end $cdc6; type texttable; name "MSTAR_nfa"; comment "M*_nfa"; };
+range { start $cdc7; end $cdca; type addrtable; };
+label { addr  $cdc9;                            name "MSTAR";     comment "M*"; };
+range { start $cdcb; end $cdde; type addrtable; };
+
+range { start $cddf; end $cde0; type texttable; name "STAR_nfa";  comment "*_nfa"; };
+range { start $cde1; end $cde4; type addrtable; };
+label { addr  $cde3;                            name "STAR";      comment "*"; };
+range { start $cde5; end $cdea; type addrtable; };
+
+range { start $cdeb; end $cdf0; type texttable; name "STARSLMOD_nfa"; comment "*/MOD_nfa"; };
+range { start $cdf1; end $cdf4; type addrtable; };
+label { addr  $cdf3;                            name "STARSLMOD";     comment  "*/MOD"; };
+range { start $cdf5; end $cdfe; type addrtable; };
+
+range { start $cdff; end $ce01; type texttable; name "STARSL_nfa";    comment "*/_nfa"; };
+range { start $ce02; end $ce05; type addrtable; };
+label { addr  $ce04;                            name "STARSL";        comment "*/"; };
+range { start $ce06; end $ce0b; type addrtable; };
+
+range { start $ce0c; end $ce13; type texttable; name "DECIMAL_nfa"; };
+range { start $ce14; end $ce17; type addrtable; };
+label { addr  $ce16; name "DECIMAL"; };
+range { start $ce18; end $ce21; type addrtable; };
+
+range { start $ce22; end $ce25; type texttable; name "HEX_nfa"; };
+range { start $ce26; end $ce29; type addrtable; };
+label { addr  $ce28; name "HEX"; };
+range { start $ce2a; end $ce33; type addrtable; };
+
+range { start $ce34; end $ce37; type texttable; name "BIN_nfa"; };
+range { start $ce38; end $ce3b; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ce3c; end $ce43; type addrtable; };
+
+range { start $ce44; end $ce47; type texttable; name "PAD_nfa"; };
+range { start $ce48; end $ce4b; type addrtable; };
+label { addr  $ce4a; name "PAD"; };
+range { start $ce4c; end $ce55; type addrtable; };
+
+range { start $ce56; end $ce58; type texttable; name "BDIGS_nfa"; comment "<#_nfa"; };
+range { start $ce59; end $ce5c; type addrtable; };
+label { addr  $ce5b;                            name "BDIGS";     comment "<#"; };
+range { start $ce5d; end $ce64; type addrtable; };
+
+range { start $ce65; end $ce69; type texttable; name "HOLD_nfa"; };
+range { start $ce6a; end $ce6d; type addrtable; };
+label { addr  $ce6c; name "HOLD"; };
+range { start $ce6e; end $ce7d; type addrtable; };
+
+range { start $ce7e; end $ce82; type texttable; name "SIGN_nfa"; };
+range { start $ce83; end $ce86; type addrtable; };
+label { addr  $ce85; name "SIGN"; };
+range { start $ce87; end $ce96; type addrtable; };
+
+range { start $ce97; end $ce98; type texttable; name "DIG_nfa"; comment "#_nfa"; };
+range { start $ce99; end $ce9c; type addrtable; };
+label { addr  $ce9b;                            name "DIG";     comment "#"; };
+range { start $ce9d; end $cec0; type addrtable; };
+
+range { start $cec1; end $cec3; type texttable; name "DIGS_nfa"; comment "#S_nfa"; };
+range { start $cec4; end $cec7; type addrtable; };
+label { addr  $cec6;                            name "DIGS";     comment "#S"; };
+range { start $cec8; end $ced5; type addrtable; };
+
+range { start $ced6; end $ced8; type texttable; name "EDIGS_nfa"; comment "#>_nfa"; };
+range { start $ced9; end $cedc; type addrtable; };
+label { addr  $cedb;                            name "EDIGS";     comment "#>"; };
+range { start $cedd; end $ceea; type addrtable; };
+
+range { start $ceeb; end $ceee; type texttable; name "DDOTR_nfa"; comment "D.R_nfa"; };
+range { start $ceef; end $cef2; type addrtable; };
+label { addr  $cef1;                            name "DDOTR";     comment "D.R"; };
+range { start $cef3; end $cf0e; type addrtable; };
+
+range { start $cf0f; end $cf11; type texttable; name "DDOT_nfa";  comment "D._nfa"; };
+range { start $cf12; end $cf15; type addrtable; };
+label { addr  $cf14;                            name "DDOT";      comment "D."; };
+range { start $cf16; end $cf1d; type addrtable; };
+
+range { start $cf1e; end $cf20; type texttable; name "DOTR_nfa";  comment ".R_nfa"; };
+range { start $cf21; end $cf24; type addrtable; };
+label { addr  $cf23;                            name "DOTR";      comment ".R"; };
+range { start $cf25; end $cf2e; type addrtable; };
+
+range { start $cf2f; end $cf30; type texttable; name "DOT_nfa";   comment "._nfa"; };
+range { start $cf31; end $cf34; type addrtable; };
+label { addr  $cf33;                            name "DOT";       comment "."; };
+range { start $cf35; end $cf3a; type addrtable; };
+
+range { start $cf3b; end $cf3c; type texttable; name "QUESTION_nfa"; comment "?_nfa"; };
+range { start $cf3d; end $cf40; type addrtable; };
+label { addr  $cf3f;                            name "QUESTION";     comment "?"; };
+range { start $cf41; end $cf46; type addrtable; };
+
+range { start $cf47; end $cf49; type texttable; name "UDOT_nfa";     comment "U._nfa"; };
+range { start $cf4a; end $cf4d; type addrtable; };
+label { addr  $cf4c;                            name "UDOT";         comment "U."; };
+range { start $cf4e; end $cf53; type addrtable; };
+
+range { start $cf54; end $cf56; type texttable; name "HDOT_nfa";     comment "H._nfa"; };
+range { start $cf57; end $cf5a; type addrtable; };
+#label { addr  $; name ""; };
+range { start $cf5b; end $cf6a; type addrtable; };
+
+range { start $cf6b; end $cf70; type texttable; name "QCOMP_nfa"; comment "?COMP_nfa"; };
+range { start $cf71; end $cf74; type addrtable; };
+label { addr  $cf73;                            name "QCOMP";     comment "?COMP"; };
+range { start $cf75; end $cf82; type addrtable; };
+
+range { start $cf83; end $cf8a; type texttable; name "COMPILE_nfa"; };
+range { start $cf8b; end $cf8e; type addrtable; };
+label { addr  $cf8d; name "COMPILE"; };
+range { start $cf8f; end $cf9a; type addrtable; };
+
+range { start $cf9b; end $cfa2; type texttable; name "LITERAL_nfa"; };
+range { start $cfa3; end $cfa6; type addrtable; };
+label { addr  $cfa5; name "LITERAL"; };
+range { start $cfa7; end $cfb6; type addrtable; };
+
+range { start $cfb7; end $cfbf; type texttable; name "DLITERAL_nfa"; };
+range { start $cfc0; end $cfc3; type addrtable; };
+label { addr  $cfc2; name "DLITERAL"; };
+range { start $cfc4; end $cfd3; type addrtable; };
+
+range { start $cfd4; end $cfd6; type texttable; name "backslash_C_nfa"; };
+range { start $cfd7; end $cfda; type addrtable; };
+#label { addr  $; name ""; };
+range { start $cfdb; end $cfe8; type addrtable; };
+
+range { start $cfe9; end $cfeb; type texttable; name "backslash_L_nfa"; };
+range { start $cfec; end $cfef; type addrtable; };
+#label { addr  $; name ""; };
+range { start $cff0; end $cff9; type addrtable; };
+
+range { start $cffa; end $cffd; type texttable; name "backslash_S_nfa"; comment "backslash S<space>"; };
+range { start $cffe; end $d001; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d002; end $d01f; type addrtable; };
+
+range { start $d020; end $d022; type texttable; name "backslash_J_nfa"; };
+range { start $d023; end $d026; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d027; end $d03a; type addrtable; };
+
+range { start $d03b; end $d03d; type texttable; name "backslash_D_nfa"; };
+range { start $d03e; end $d041; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d042; end $d053; type addrtable; };
+
+range { start $d054; end $d058; type texttable; name "WORD_nfa"; };
+range { start $d059; end $d05c; type addrtable; };
+label { addr  $d05b; name "WORD"; };
+range { start $d05d; end $d0a0; type addrtable; };
+
+range { start $d0a1; end $d0a6; type texttable; name "ASCII_nfa"; };
+range { start $d0a7; end $d0aa; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d0ab; end $d0b8; type addrtable; };
+
+range { start $d0b9; end $d0ba; type texttable; name "LPAREN_nfa"; comment "(_nfa"; };
+range { start $d0bb; end $d0be; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d0bf; end $d0c6; type addrtable; };
+
+range { start $d0c7; end $d0cb; type texttable; name "PDOTQ_nfa"; comment "(.\")_nfa"; };
+range { start $d0cc; end $d0cf; type addrtable; };
+label { addr  $d0ce;                            name "PDOTQ";     comment "(.\")"; };
+range { start $d0d0; end $d0dd; type addrtable; };
+
+range { start $d0de; end $d0e0; type texttable; name "DOTQ_nfa";  comment ".\"_nfa"; };
+range { start $d0e1; end $d0e4; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d0e5; end $d10c; type addrtable; };
+
+range { start $d10d; end $d112; type texttable; name "DFIND_nfa"; comment "-FIND_nfa"; };
+range { start $d113; end $d116; type addrtable; };
+label { addr  $d115;                            name "DFIND";     comment "-FIND"; };
+range { start $d117; end $d144; type addrtable; };
+
+range { start $d145; end $d146; type texttable; name "TICK_nfa";  comment "'_nfa"; };
+range { start $d147; end $d14a; type addrtable; };
+label { addr  $d149;                            name "TICK";      comment "'"; };
+range { start $d14b; end $d15a; type addrtable; };
+
+range { start $d15b; end $d164; type texttable; name "BCOMPILE_nfa"; comment "[COMPILE]_nfa"; };
+range { start $d165; end $d168; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d169; end $d17a; type addrtable; };
+
+range { start $d17b; end $d17e; type texttable; name "OFF_nfa"; };
+range { start $d17f; end $d182; type addrtable; };
+label { addr  $d181; name "OFF"; };
+range { start $d183; end $d18a; type addrtable; };
+
+range { start $d18b; end $d18d; type texttable; name "ON_nfa"; };
+range { start $d18e; end $d191; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d192; end $d199; type addrtable; };
+
+range { start $d19a; end $d19b; type texttable; name "LBRACKET_nfa"; comment "[_nfa"; };
+range { start $d19c; end $d19f; type addrtable; };
+label { addr  $d19e;                            name "LBRACKET";     comment "["; };
+range { start $d1a0; end $d1a5; type addrtable; };
+
+range { start $d1a6; end $d1a7; type texttable; name "RBRACKET_nfa"; comment "]_nfa"; };
+range { start $d1a8; end $d1ab; type addrtable; };
+label { addr  $d1aa;                            name "RBRACKET";     comment "]"; };
+range { start $d1ac; end $d1b5; type addrtable; };
+
+range { start $d1b6; end $d1ba; type texttable; name "STORECSP_nfa"; comment "!CSP_nfa"; };
+range { start $d1bb; end $d1be; type addrtable; };
+label { addr  $d1bd;                            name "STORECSP";     comment "!CSP"; };
+range { start $d1bf; end $d1c6; type addrtable; };
+
+range { start $d1c7; end $d1cb; type texttable; name "QCSP_nfa";     comment "?CSP_nfa"; };
+range { start $d1cc; end $d1cf; type addrtable; };
+label { addr  $d1ce;                            name "QCSP";         comment "?CSP"; };
+range { start $d1d0; end $d1df; type addrtable; };
+
+range { start $d1e0; end $d1e1; type texttable; name "SEMI_nfa";     comment ";_nfa"; };
+range { start $d1e2; end $d1e5; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d1e6; end $d1f1; type addrtable; };
+
+range { start $d1f2; end $d1f8; type texttable; name "PLITQ_nfa";  comment "(LIT\")_nfa"; };
+range { start $d1f9; end $d1fc; type addrtable; };
+label { addr  $d1fb;                            name "PLITQ";      comment "(LIT\")"; };
+range { start $d1fd; end $d208; type addrtable; };
+
+range { start $d209; end $d20d; type texttable; name "LITQ_nfa";     comment "LIT\"_nfa"; };
+range { start $d20e; end $d211; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d212; end $d227; type addrtable; };
+
+range { start $d228; end $d523; type texttable; name "MSG"; };
+
+range { start $d524; end $d52b; type texttable; name "MESSAGE_nfa"; };
+range { start $d52c; end $d52f; type addrtable; };
+label { addr  $d52e; name "MESSAGE"; };
+range { start $d530; end $d56f; type addrtable; };
+range { start $d570; end $d574; type texttable; };
+range { start $d575; end $d57c; type addrtable; };
+
+range { start $d57d; end $d582; type texttable; name "DEFER_nfa"; };
+range { start $d583; end $d586; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d587; end $d5a6; type addrtable; };
+label { addr  $d5a7; name "DODEFER"; };
+
+range { start $d5bf; end $d5c3; type texttable; name "PIS_nfa"; comment "(IS)_nfa"; };
+range { start $d5c4; end $d5c7; type addrtable; };
+label { addr  $d5c6;                            name "PIS";     comment "(IS)"; };
+range { start $d5c8; end $d5d3; type addrtable; };
+
+range { start $d5d4; end $d5d6; type texttable; name "IS_nfa"; };
+range { start $d5d7; end $d5da; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d5db; end $d5f0; type addrtable; };
+
+range { start $d5f1; end $d5f6; type texttable; name "B_BUF_nfa"; comment "B/BUF_nfa"; };
+range { start $d5f7; end $d5fa; type addrtable; };
+label { addr  $d5f9;                            name "B_BUF";     comment "B/BUF"; };
+range { start $d5fb; end $d5fc; type wordtable; };
+
+range { start $d5fd; end $d602; type texttable; name "B_SCR_nfa"; comment "B/SCR_nfa"; };
+range { start $d603; end $d606; type addrtable; };
+label { addr  $d605;                            name "B_SCR";     comment "B/SCR"; };
+range { start $d607; end $d608; type wordtable; };
+
+range { start $d609; end $d60e; type texttable; name "FIRST_nfa"; };
+range { start $d60f; end $d612; type addrtable; };
+label { addr  $d611; name "FIRST"; };
+range { start $d613; end $d614; type wordtable; };
+
+range { start $d615; end $d61a; type texttable; name "LIMIT_nfa"; };
+range { start $d61b; end $d61e; type addrtable; };
+label { addr  $d61d; name "LIMIT"; };
+range { start $d61f; end $d620; type addrtable; };
+
+range { start $d621; end $d62e; type texttable; name "EMPTYBUFFERS_nfa"; comment "EMPTY-BUFFERS_nfa"; };
+range { start $d62f; end $d632; type addrtable; };
+label { addr  $d631;                            name "EMPTYBUFFERS";     comment "EMPTY-BUFFERS"; };
+range { start $d633; end $d63e; type addrtable; };
+
+range { start $d63f; end $d645; type texttable; name "UPDATE_nfa"; };
+range { start $d646; end $d649; type addrtable; };
+label { addr  $d648; name "UPDATE"; };
+range { start $d64a; end $d659; type addrtable; };
+
+range { start $d65a; end $d65f; type texttable; name "FLUSH_nfa"; };
+range { start $d660; end $d663; type addrtable; };
+label { addr  $d662; name "FLUSH"; };
+range { start $d664; end $d681; type addrtable; };
+
+range { start $d682; end $d687; type texttable; name "BLOCK_nfa"; };
+range { start $d688; end $d68b; type addrtable; };
+label { addr  $d68a; name "BLOCK"; };
+range { start $d68c; end $d6b1; type addrtable; };
+
+range { start $d6b2; end $d6b7; type texttable; name "ABORT_nfa"; };
+range { start $d6b8; end $d6bb; type addrtable; };
+label { addr  $d6ba; name "ABORT"; };
+range { start $d6bc; end $d6bd; type addrtable; comment "Vérifier si byte ou addr"; };
+
+range { start $d6be; end $d6c3; type texttable; name "ERROR_nfa"; };
+range { start $d6c4; end $d6c7; type addrtable; };
+label { addr  $d6c6; name "ERROR"; };
+range { start $d6c8; end $d6db; type addrtable; };
+range { start $d6dc; end $d6df; type texttable; };
+range { start $d6e0; end $d6f9; type addrtable; };
+
+range { start $d6fa; end $d700; type texttable; name "QERROR_nfa"; comment "?ERROR_nfa"; };
+range { start $d701; end $d704; type addrtable; };
+label { addr  $d703;                            name "QERROR";     comment "?ERROR"; };
+range { start $d705; end $d714; type addrtable; };
+
+range { start $d715; end $d71d; type texttable; name "PNUMBER_nfa"; comment "(NUMBER)_nfa"; };
+range { start $d71e; end $d721; type addrtable; };
+label { addr  $d720;                            name "PNUMBER";     comment "(NUMBER)"; };
+range { start $d722; end $d75f; type addrtable; };
+
+range { start $d760; end $d767; type texttable; name "INUMBER_nfa"; };
+range { start $d768; end $d76b; type addrtable; };
+label { addr  $d76a; name "INUMBER"; };
+range { start $d76c; end $d7b9; type addrtable; };
+
+range { start $d7ba; end $d7c0; type texttable; name "NUMBER_nfa"; };
+range { start $d7c1; end $d7c4; type addrtable; };
+label { addr  $d7c3; name "NUMBER"; };
+range { start $d7c5; end $d7c6; type addrtable; comment "Vérifier si byte ou addr"; };
+
+range { start $d7c7; end $d7c9; type texttable; name "DOTS"; comment ".S_nfa"; };
+range { start $d7ca; end $d7cd; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d7ce; end $d7cf; type addrtable; };
+range { start $d7d0; end $d7d4; type texttable; };
+range { start $d7d5; end $d7f6; type addrtable; };
+range { start $d7f7; end $d7f9; type texttable; };
+range { start $d7fa; end $d7fb; type addrtable; };
+
+range { start $d7fc; end $d801; type texttable; name "QEXEC_nfa"; comment "?EXEC_nfa"; };
+range { start $d802; end $d805; type addrtable; };
+label { addr  $d804;                            name "QEXEC";     comment "?EXEC"; };
+range { start $d806; end $d811; type addrtable; };
+
+range { start $d812; end $d818; type texttable; name "QSTACK_nfa"; comment "?STACK_nfa"; };
+range { start $d819; end $d81c; type addrtable; };
+label { addr  $d81b;                            name "QSTACK";      comment "?STACK"; };
+range { start $d81d; end $d83a; type addrtable; };
+
+range { start $d83b; end $d841; type texttable; name "QPAIRS_nfa";  comment "?PAIRS_nfa"; };
+range { start $d842; end $d845; type addrtable; };
+label { addr  $d844;                            name "QPAIRS";      comment "?PAIRS"; };
+range { start $d846; end $d84f; type addrtable; };
+
+range { start $d850; end $d853; type texttable; name "QOK_nfa";     comment "?OK_nfa"; };
+range { start $d854; end $d857; type addrtable; };
+label { addr  $d856;                            name "QOK";         comment "?OK"; };
+range { start $d858; end $d859; type addrtable; };
+range { start $d85a; end $d85f; type texttable; };
+range { start $d860; end $d893; type addrtable; };
+range { start $d894; end $d8b3; type texttable; };
+range { start $d8b4; end $d8bb; type addrtable; };
+
+range { start $d8bc; end $d8be; type texttable; name "OK_nfa"; };
+range { start $d8bf; end $d8c2; type addrtable; };
+label { addr  $d8c1; name "OK"; };
+range { start $d8c3; end $d8c4; type addrtable; };
+range { start $d8c5; end $d8c7; type texttable; };
+range { start $d8c8; end $d909; type addrtable; };
+
+range { start $d90a; end $d910; type texttable; name "PROMPT_nfa"; };
+range { start $d911; end $d914; type addrtable; };
+label { addr  $d913; name "PROMPT"; };
+range { start $d915; end $d916; type addrtable; comment "Vérifier si byte ou addr"; };
+
+range { start $d917; end $d91d; type texttable; name "EXPECT_nfa"; };
+range { start $d91e; end $d921; type addrtable; };
+label { addr  $d920; name "EXPECT"; };
+range { start $d922; end $d9cf; type addrtable; };
+
+range { start $d9d0; end $d9d5; type texttable; name "QUERY_nfa"; };
+range { start $d9d6; end $d9d9; type addrtable; };
+label { addr  $d9d8; name "QUERY"; };
+range { start $d9da; end $d9eb; type addrtable; };
+
+range { start $d9ec; end $d9ed; type texttable; name "NUL_nfa";  comment "<nul>_nfa"; };
+range { start $d9ee; end $d9f1; type addrtable; };
+#label { addr  $; name ""; };
+range { start $d9f2; end $da21; type addrtable; };
+
+range { start $da22; end $da2b; type texttable; name "INTERPRET_nfa"; };
+range { start $da2c; end $da2f; type addrtable; };
+label { addr  $da2e; name "INTERPRET"; };
+range { start $da30; end $da6f; type addrtable; };
+
+range { start $da70; end $da74; type texttable; name "QUIT_nfa"; };
+range { start $da75; end $da78; type addrtable; };
+label { addr  $da77; name "QUIT"; };
+range { start $da79; end $da9a; type addrtable; };
+
+range { start $da9b; end $daa1; type texttable; name "CREATE_nfa"; };
+range { start $daa2; end $daa5; type addrtable; };
+label { addr  $daa4; name "CREATE"; };
+range { start $daa6; end $daf9; type addrtable; };
+
+range { start $dafa; end $db04; type texttable; name "VOCABULARY_nfa"; };
+range { start $db05; end $db08; type addrtable; };
+#label { addr  $; name ""; };
+range { start $db09; end $db3a; type addrtable; };
+label { addr  $db31; name "DOVOC"; };
+
+range { start $db3b; end $db40; type texttable; name "FORTH_nfa"; };
+range { start $db41; end $db44; type addrtable; };
+label { addr  $db43; name "FORTH"; };
+range { start $db45; end $db4a; type addrtable; name "FORTH_pfa"; };
+label { addr  $db49; name "FORTH_LINK"; };
+
+range { start $db4b; end $db54; type texttable; name "QTERMINAL_nfa"; comment "?TERMINAL_nfa"; };
+range { start $db55; end $db58; type addrtable; };
+label { addr  $db57;                            name "QTERMINAL";     comment "?TERMINAL"; };
+range { start $db59; end $db5a; type addrtable; name "QTERMINAL_pfa"; comment "?TERMINAL_pfa, Vérifier si byte ou addr"; };
+
+range { start $db5b; end $db5e; type texttable; name "KEY_nfa"; };
+range { start $db5f; end $db62; type addrtable; };
+label { addr  $db61; name "KEY"; };
+range { start $db63; end $db64; type addrtable; name "KEY_pfa"; comment "Vérifier su byte ou addr"; };
+
+range { start $db65; end $db69; type texttable; name "EMIT_nfa"; };
+range { start $db6a; end $db6d; type addrtable; };
+label { addr  $db6c; name "EMIT"; };
+range { start $db6e; end $db6f; type addrtable; name "EMIT_pfa"; comment "Vérifier si byte ou addr"; };
+
+range { start $db70; end $db77; type texttable; name "PABORT_nfa"; comment "(ABORT)_nfa"; };
+range { start $db78; end $db7b; type addrtable; };
+label { addr  $db7a;                            name "PABORT";     comment "(ABORT)"; };
+range { start $db7c; end $db91; type addrtable; };
+range { start $db92; end $db9e; type texttable; };
+range { start $db9f; end $dbac; type addrtable; };
+range { start $dbad; end $dbae; type texttable; };
+range { start $dbaf; end $dbc6; type addrtable; };
+range { start $dbc7; end $dbd5; type texttable; };
+range { start $dbd6; end $dbdf; type addrtable; };
+
+range { start $dbe0; end $dbe4; type texttable; name "COLD_nfa"; };
+range { start $dbe5; end $dbe8; type addrtable; };
+label { addr  $dbe7; name "COLD"; };
+range { start $dbe9; end $dc2e; type addrtable; };
+
+range { start $dc2f; end $dc33; type texttable; name "WARM_nfa"; };
+range { start $dc34; end $dc37; type addrtable; };
+label { addr  $dc36; name "WARM"; };
+range { start $dc38; end $dc3d; type addrtable; };
+
+range { start $dc3e; end $dc42; type texttable; name "MRKFROM_nfa"; comment "MRK>_nfa"; };
+range { start $dc43; end $dc46; type addrtable; };
+label { addr  $dc45;                            name "MRKFROM";     comment "MRK>"; };
+range { start $dc47; end $dc4e; type addrtable; };
+
+range { start $dc4f; end $dc53; type texttable; name "MRKTO_nfa";   comment "MRK<_nfa"; };
+range { start $dc54; end $dc57; type addrtable; };
+label { addr  $dc56;                            name "MRKTO";       comment "MRK<"; };
+range { start $dc58; end $dc5b; type addrtable; };
+
+range { start $dc5c; end $dc60; type texttable; name "RESFROM_nfa"; comment "RES>_nfa"; };
+range { start $dc61; end $dc64; type addrtable; };
+label { addr  $dc63;                            name "RESFROM";     comment "RES>"; };
+range { start $dc65; end $dc6c; type addrtable; };
+
+range { start $dc6d; end $dc71; type texttable; name "RESTO_nfa";   comment "RES<_nfa"; };
+range { start $dc72; end $dc75; type addrtable; };
+label { addr  $dc74;                            name "RESTO";       comment "RES<"; };
+range { start $dc76; end $dc79; type addrtable; };
+
+range { start $dc7a; end $dc7c; type texttable; name "IF_nfa"; };
+range { start $dc7d; end $dc80; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dc81; end $dc8c; type addrtable; };
+
+range { start $dc8d; end $dc91; type texttable; name "ELSE_nfa"; };
+range { start $dc92; end $dc95; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dc96; end $dca7; type addrtable; };
+
+range { start $dca8; end $dcad; type texttable; name "ENDIF_nfa"; };
+range { start $dcae; end $dcb1; type addrtable; };
+label { addr  $dcb0; name "ENDIF"; };
+range { start $dcb2; end $dcb9; type addrtable; };
+
+range { start $dcba; end $dcbf; type texttable; name "BEGIN_nfa"; };
+range { start $dcc0; end $dcc3; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dcc4; end $dccb; type addrtable; };
+
+range { start $dccc; end $dcd1; type texttable; name "AGAIN_nfa"; };
+range { start $dcd2; end $dcd5; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dcd6; end $dce1; type addrtable; };
+
+range { start $dce2; end $dce7; type texttable; name "UNTIL_nfa"; };
+range { start $dce8; end $dceb; type addrtable; };
+label { addr  $dcea; name "UNTIL"; };
+range { start $dcec; end $dcf7; type addrtable; };
+
+range { start $dcf8; end $dcfd; type texttable; name "WHILE_nfa"; };
+range { start $dcfe; end $dd01; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dd02; end $dd11; type addrtable; };
+
+range { start $dd12; end $dd18; type texttable; name "REPEAT_nfa"; };
+range { start $dd19; end $dd1c; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dd1d; end $dd2e; type addrtable; };
+
+range { start $dd2f; end $dd31; type texttable; name "DO_nfa"; };
+range { start $dd32; end $dd35; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dd36; end $dd43; type addrtable; };
+
+range { start $dd44; end $dd48; type texttable; name "LOOP_nfa"; };
+range { start $dd49; end $dd4c; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dd4d; end $dd5a; type addrtable; };
+
+range { start $dd5b; end $dd60; type texttable; name "PlusLOOP_nfa"; comment "+LOOP_nfa"; };
+range { start $dd61; end $dd64; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dd65; end $dd72; type addrtable; };
+
+range { start $dd73; end $dd77; type texttable; name "CASE_nfa"; };
+range { start $dd78; end $dd7b; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dd7c; end $dd89; type addrtable; };
+
+range { start $dd8a; end $dd8c; type texttable; name "OF_nfa"; };
+range { start $dd8d; end $dd90; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dd91; end $dda2; type addrtable; };
+
+range { start $dda3; end $dda6; type texttable; name "OFQUOT_nfa"; comment "OF\"_nfa"; };
+range { start $dda7; end $ddaa; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ddab; end $ddca; type addrtable; };
+
+range { start $ddcb; end $ddd0; type texttable; name "ENDOF_nfa"; };
+range { start $ddd1; end $ddd4; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ddd5; end $ddea; type addrtable; };
+
+range { start $ddeb; end $ddf2; type texttable; name "ENDCASE_nfa"; };
+range { start $ddf3; end $ddf6; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ddf7; end $de18; type addrtable; };
+
+range { start $de19; end $de1d; type texttable; name "THEN_nfa"; };
+range { start $de1e; end $de21; type addrtable; };
+#label { addr  $; name ""; };
+range { start $de22; end $de25; type addrtable; };
+
+range { start $de26; end $de29; type texttable; name "END_nfa"; };
+range { start $de2a; end $de2d; type addrtable; };
+#label { addr  $; name ""; };
+range { start $de2e; end $de31; type addrtable; };
+
+range { start $de32; end $de35; type texttable; name "IFP_nfa"; comment "IF(_nfa"; };
+range { start $de36; end $de39; type addrtable; };
+#label { addr  $; name ""; };
+range { start $de3a; end $de45; type addrtable; };
+range { start $de46; end $de4c; type texttable; };
+range { start $de4d; end $de58; type addrtable; };
+range { start $de59; end $de5f; type texttable; };
+range { start $de60; end $de71; type addrtable; };
+
+range { start $de72; end $de78; type texttable; name "PELSEP_nfa"; comment ")ELSE(_nfa"; };
+range { start $de79; end $de7c; type addrtable; };
+#label { addr  $; name ""; };
+range { start $de7d; end $de82; type addrtable; };
+range { start $de83; end $de89; type texttable; };
+range { start $de8a; end $de99; type addrtable; };
+
+range { start $de9a; end $dea0; type texttable; name "PENDIF_nfa"; comment ")ENDIF_nfa"; };
+range { start $dea1; end $dea4; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dea5; end $dea6; type addrtable; };
+
+range { start $dea7; end $deaf; type texttable; name "QLOADING_nfa"; comment "?LOADING_nfa"; };
+range { start $deb0; end $deb3; type addrtable; };
+label { addr  $deb2;                            name "QLOADING";     comment "?LOADING"; };
+range { start $deb4; end $dec1; type addrtable; };
+
+range { start $dec2; end $dec3; type texttable; name "backslash_nfa"; };
+range { start $dec4; end $dec7; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dec8; end $dedb; type addrtable; };
+
+range { start $dedc; end $dedf; type texttable; name "FOLLOW_nfa"; comment "-->_nfa"; };
+range { start $dee0; end $dee3; type addrtable; };
+#label { addr  $; name ""; };
+range { start $dee4; end $defd; type addrtable; };
+
+range { start $defe; end $df02; type texttable; name "LOAD_nfa"; };
+range { start $df03; end $df06; type addrtable; };
+label { addr  $df05; name "LOAD"; };
+range { start $df07; end $df30; type addrtable; };
+
+range { start $df31; end $df35; type texttable; name "THRU_nfa"; };
+range { start $df36; end $df39; type addrtable; };
+label { addr  $df38; name "THRU"; };
+range { start $df3a; end $df49; type addrtable; };
+
+range { start $df4a; end $df54; type texttable; name "LOAD_USING_nfa"; comment "LOAD-USING_nfa"; };
+range { start $df55; end $df58; type addrtable; };
+#label { addr  $; name ""; };
+range { start $df59; end $df64; type addrtable; };
+
+range { start $df65; end $df6f; type texttable; name "THRU_USING_nfa"; comment "THRU-USING_nfa"; };
+range { start $df70; end $df73; type addrtable; };
+#label { addr  $; name ""; };
+range { start $df74; end $df7f; type addrtable; };
+
+range { start $df80; end $df89; type texttable; name "QTERMSTOP_nfa"; comment "?TERMSTOP_nfa"; };
+range { start $df8a; end $df8d; type addrtable; };
+label { addr  $df8c;                            name "QTERMSTOP";     comment "?TERMSTOP"; };
+range { start $df8e; end $dfaf; type addrtable; };
+
+range { start $dfb0; end $dfb3; type texttable; name "CSLL_nfa"; comment "C/L_nfa"; };
+range { start $dfb4; end $dfb7; type addrtable; };
+label { addr  $dfb6;                            name "CSLL";     comment "C/L"; };
+range { start $dfb8; end $dfb9; type wordtable; };
+
+range { start $dfba; end $dfc0; type texttable; name "PLINE_nfa"; comment "(LINE)_nfa"; };
+range { start $dfc1; end $dfc4; type addrtable; };
+label { addr  $dfc3;                            name "PLINE";     comment "(LINE)"; };
+range { start $dfc5; end $dfdc; type addrtable; };
+
+range { start $dfdd; end $dfe2; type texttable; name "DOTLINE_nfa"; };
+range { start $dfe3; end $dfe6; type addrtable; };
+label { addr  $dfe5; name "DOTLINE"; };
+range { start $dfe7; end $dfee; type addrtable; };
+
+range { start $dfef; end $dff3; type texttable; name "LIST_nfa"; };
+range { start $dff4; end $dff7; type addrtable; };
+label { addr  $dff6; name "LIST"; };
+range { start $dff8; end $e001; type addrtable; };
+range { start $e002; end $e007; type texttable; };
+range { start $e008; end $e02f; type addrtable; };
+
+range { start $e030; end $e035; type texttable; name "TRIAD_nfa"; };
+range { start $e036; end $e039; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e03a; end $e071; type addrtable; };
+
+range { start $e072; end $e077; type texttable; name "INDEX_nfa"; };
+range { start $e078; end $e07b; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e07c; end $e0a5; type addrtable; };
+
+range { start $e0a6; end $e0a8; type texttable; name "VTO_nfa";    comment "V<_nfa"; };
+range { start $e0a9; end $e0ac; type addrtable; };
+label { addr  $e0ab;                            name "VTO";        comment "V<"; };
+range { start $e0ad; end $e0c0; type addrtable; };
+
+range { start $e0c1; end $e0c7; type texttable; name "FORGET_nfa"; };
+range { start $e0c8; end $e0cb; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e0cc; end $e13b; type addrtable; };
+
+range { start $e13c; end $e13f; type texttable; name "IDDOT_nfa"; comment "ID._nfa"; };
+range { start $e140; end $e143; type addrtable; };
+label { addr  $e142;                            name "IDDOT";     comment "ID."; };
+range { start $e144; end $e171; type addrtable; };
+
+range { start $e172; end $e177; type texttable; name "VLIST_nfa"; };
+range { start $e178; end $e17b; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e17c; end $e1cd; type addrtable; };
+
+range { start $e1ce; end $e1d6; type texttable; name "VOC_LIST_nfa"; comment "VOC-LIST_nfa"; };
+range { start $e1d7; end $e1da; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e1db; end $e1f6; type addrtable; };
+
+range { start $e1f7; end $e214; type code;      name "INIT_RAM"; comment "INIT-RAM: Copie $3c80 octets de $c37f vers $c380???"; };
+
+range { start $e215; end $e23f; type texttable; name "teleforth_signature"; };
+
+range { start $e240; end $e243; type texttable; name "AYX_nfa"; };
+range { start $e244; end $e247; type addrtable; };
+label { addr  $e246; name "AYX"; };
+range { start $e248; end $e249; type wordtable; };
+
+range { start $e24a; end $e24d; type texttable; name "PIO_nfa"; };
+range { start $e24e; end $e251; type addrtable; };
+label { addr  $e250; name "PIO"; };
+range { start $e252; end $e253; type wordtable; };
+
+range { start $e254; end $e257; type texttable; name "MON_nfa"; };
+range { start $e258; end $e25b; type addrtable; };
+label { addr  $e25a; name "MON"; };
+range { start $e25c; end $e286; type code; name "MON_pfa"; };
+
+range { start $e287; end $e28b; type texttable; name "MONCOL_nfa"; comment "MON:_nfa -> Compile un mot d'appel à une procédure Telemon"; };
+range { start $e28c; end $e28f; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e290; end $e295; type addrtable; };
+range { start $e296; end $e2a6; type code; name "DOMON"; } ;
+
+range { start $e2a7; end $e2ab; type texttable; name "HRSCOL_nfa";  comment "HRS:_nfa"; };
+range { start $e2ac; end $e2af; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e2b0; end $e2b7; type addrtable; };
+range { start $e2b8; end $e2e6; type code; name "DOHRS"; };
+
+range { start $e2e7; end $e2ec; type texttable; name "HIMEM_nfa"; };
+range { start $e2ed; end $e2f0; type addrtable; };
+label { addr  $e2ef; name "HIMEM"; };
+range { start $e2f1; end $e304; type addrtable; };
+
+##########
+#
+##########
+
+range { start $e305; end $e30b; type texttable; name "SOUNDS_nfa"; };
+range { start $e30c; end $e30f; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e310; end $e315; type addrtable; };
+label { addr  $e314; name "SOUNDS_LINK"; };
+
+range { start $e316; end $e31a; type texttable; name "PSGCOL_nfa";  comment "PSG:_nfa"; };
+range { start $e31b; end $e31e; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e31f; end $e33c; type addrtable; };
+range { start $e33d; end $e34e; type code; };
+
+range { start $e34f; end $e353; type texttable; name "PSGSTORE_nfa"; comment "PSG!_nfa"; };
+range { start $e354; end $e357; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e358; end $e365; type addrtable; };
+
+range { start $e366; end $e36a; type texttable; name "PLAY_nfa"; };
+range { start $e36b; end $e36e; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e36f; end $e370; type bytetable; };
+
+range { start $e371; end $e376; type texttable; name "SOUND_nfa"; };
+range { start $e377; end $e37a; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e37b; end $e37c; type bytetable; };
+
+range { start $e37d; end $e382; type texttable; name "MUSIC_nfa"; };
+range { start $e383; end $e386; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e387; end $e388; type bytetable; };
+
+range { start $e389; end $e38d; type texttable; name "OUPS_nfa"; comment "Appel Telemon XOUPS ($42)"; };
+range { start $e38e; end $e391; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e392; end $e392; type bytetable; };
+
+range { start $e393; end $e396; type texttable; name "ZAP_nfa"; comment "Appel Telemon XZAP ($46)"; };
+range { start $e397; end $e39a; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e39b; end $e39b; type bytetable; };
+
+range { start $e39c; end $e3a1; type texttable; name "SHOOT_nfa"; comment "Appel Telemon XSHOOT ($47)"; };
+range { start $e3a2; end $e3a5; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e3a6; end $e3a6; type bytetable; };
+
+range { start $e3a7; end $e3ae; type texttable; name "EXPLODE_nfa"; comment "Appel Telemon XEXPLO ($9C)"; };
+range { start $e3af; end $e3b2; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e3b3; end $e3b3; type bytetable; };
+
+range { start $e3b4; end $e3b8; type texttable; name "PING_nfa"; comment "Appel Telemon XPING ($9D)"; };
+range { start $e3b9; end $e3bc; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e3bd; end $e3bd; type bytetable; };
+
+########
+#
+########
+
+range { start $e3be; end $e3c3; type texttable; name "GRAFX_nfa"; };
+range { start $e3c4; end $e3c7; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e3c8; end $e3cd; type addrtable; };
+label { addr  $e3cc; name "GRAFX_LINK"; };
+
+range { start $e3ce; end $e3d2; type texttable; name "TEXTgrafx_nfa"; comment "Vocabulaire GRAFX - Appel Telemon XTEXT ($19)"; };
+range { start $e3d3; end $e3d6; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e3d7; end $e3d7; type bytetable; };
+
+range { start $e3d8; end $e3dd; type texttable; name "HIRES_nfa"; comment "Appel Telemon XHIRES ($1A)"; };
+range { start $e3de; end $e3e1; type addrtable; };
+label { addr  $e3e0; name "HIRES"; };
+range { start $e3e2; end $e3e2; type bytetable; };
+
+range { start $e3e3; end $e3e8; type texttable; name "ADRAW_nfa"; };
+range { start $e3e9; end $e3ec; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e3ed; end $e3ee; type bytetable; };
+
+range { start $e3ef; end $e3f3; type texttable; name "DRAW_nfa"; };
+range { start $e3f4; end $e3f7; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e3f8; end $e3f9; type bytetable; };
+
+range { start $e3fa; end $e400; type texttable; name "CIRCLE_nfa"; };
+range { start $e401; end $e404; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e405; end $e406; type bytetable; };
+
+range { start $e407; end $e40d; type texttable; name "CURSET_nfa"; };
+range { start $e40e; end $e411; type addrtable; };
+label { addr  $e410; name "CURSET"; };
+range { start $e412; end $e413; type bytetable; };
+
+range { start $e414; end $e41a; type texttable; name "CURMOV_nfa"; };
+range { start $e41b; end $e41e; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e41f; end $e420; type bytetable; };
+
+range { start $e421; end $e424; type texttable; name "BOX_nfa"; };
+range { start $e425; end $e428; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e429; end $e42a; type bytetable; };
+
+range { start $e42b; end $e42f; type texttable; name "ABOX_nfa"; };
+range { start $e430; end $e433; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e434; end $e435; type bytetable; };
+
+range { start $e436; end $e43a; type texttable; name "PAVE_nfa"; };
+range { start $e43b; end $e43e; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e43f; end $e440; type bytetable; };
+
+range { start $e441; end $e446; type texttable; name "PAPER_nfa"; };
+range { start $e447; end $e44a; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e44b; end $e458; type addrtable; };
+
+range { start $e459; end $e45c; type texttable; name "INK_nfa"; };
+range { start $e45d; end $e460; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e461; end $e46e; type addrtable; };
+
+range { start $e46f; end $e471; type texttable; name "FB_nfa"; };
+range { start $e472; end $e475; type addrtable; };
+label { addr  $e474; name "FB"; };
+range { start $e476; end $e485; type addrtable; };
+
+range { start $e486; end $e48d; type texttable; name "PATTERN_nfa"; };
+range { start $e48e; end $e491; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e492; end $e499; type addrtable; };
+
+range { start $e49a; end $e49f; type texttable; name "HEMIT_nfa"; };
+range { start $e4a0; end $e4a3; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e4a4; end $e4af; type addrtable; };
+
+range { start $e4b0; end $e4b5; type texttable; name "HTYPE_nfa"; };
+range { start $e4b6; end $e4b9; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e4ba; end $e4c7; type addrtable; };
+
+range { start $e4c8; end $e4ce; type texttable; name "ADCHAR_nfa"; };
+range { start $e4cf; end $e4d2; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e4d3; end $e4e2; type addrtable; };
+
+range { start $e4e3; end $e4e8; type texttable; name "CHARCOL_nfa"; comment "CHAR:_nfa"; };
+range { start $e4e9; end $e4ec; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e4ed; end $e51a; type addrtable; };
+
+#########
+#
+#########
+range { start $e51b; end $e522; type texttable; name "WINDOWS_nfa"; };
+range { start $e523; end $e526; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e527; end $e52c; type addrtable; };
+label { addr  $e52b; name "WINDOWS_LINK"; };
+
+range { start $e52d; end $e534; type texttable; name "WINDOWCOL_nfa"; comment "WINDOW:_nfa"; };
+range { start $e535; end $e538; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e539; end $e566; type addrtable; };
+label { addr  $e555; name "DOWINDOW"; };
+
+range { start $e567; end $e56b; type texttable; name "MSGW_nfa"; };
+range { start $e56c; end $e56f; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e570; end $e571; type addrtable; };
+range { start $e572; end $e577; type bytetable; };
+
+range { start $e578; end $e57c; type texttable; name "SCRW_nfa"; };
+range { start $e57d; end $e580; type addrtable; };
+label { addr  $e57f; name "SCRW"; };
+range { start $e581; end $e582; type addrtable; };
+range { start $e583; end $e588; type bytetable; };
+
+range { start $e589; end $e58f; type texttable; name "CURSOR_nfa"; };
+range { start $e590; end $e593; type addrtable; };
+label { addr  $e592; name "CURSOR"; };
+range { start $e594; end $e5a7; type code; };
+
+range { start $e5a9; end $e5af; type texttable; name "SCROLL_nfa"; };
+range { start $e5b0; end $e5b3; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e5b4; end $e5d2; type code; };
+
+range { start $e5d3; end $e5d8; type texttable; name "CLOCK_nfa"; };
+range { start $e5d9; end $e5dc; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e5dd; end $e62e; type addrtable; };
+
+range { start $e62f; end $e633; type texttable; name "WAIT_nfa"; };
+range { start $e634; end $e637; type addrtable; };
+label { addr  $e636; name "WAIT"; };
+range { start $e638; end $e69f; type addrtable; };
+
+range { start $e6a0; end $e6a5; type texttable; name "PDOS_nfa"; comment "(DOS)_nfa -> Appel de la procédure Stratsed $FFxx"; };
+range { start $e6a6; end $e6a9; type addrtable; };
+label { addr  $e6a8;                            name "PDOS";     comment "(DOS)"; };
+range { start $e6aa; end $e6f6; type code; };
+
+range { start $e6f7; end $e6fa; type texttable; name "DOS_nfa";  comment "Appel de la procédure Stratsed $FFxx avec vérification du code d'erreur"; };
+range { start $e6fb; end $e6fe; type addrtable; };
+label { addr  $e6fd; name "DOS"; };
+range { start $e6ff; end $e70c; type addrtable; };
+
+range { start $e70d; end $e735; type texttable; name "FSTR"; };
+
+range { start $e736; end $e75c; type code;      name "FRW"; };
+
+range { start $e75d; end $e75f; type texttable; name "di_nfa"; };
+range { start $e760; end $e763; type addrtable; };
+label { addr  $e762; name "di"; };
+range { start $e764; end $e767; type code; };
+
+range { start $e768; end $e76a; type texttable; name "ei_nfa"; };
+range { start $e76b; end $e76e; type addrtable; };
+label { addr  $e76d; name "ei"; };
+range { start $e76f; end $e772; type code; };
+
+range { start $e773; end $e776; type texttable; name "RSLW_nfa"; comment "R/W_nfa"; };
+range { start $e777; end $e77a; type addrtable; };
+label { addr  $e779;                            name "RSLW";     comment "R/W"; };
+range { start $e77b; end $e7cc; type addrtable; };
+
+range { start $e7cd; end $e7d2; type texttable; name "DRIVE_nfa"; };
+range { start $e7d3; end $e7d6; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e7d7; end $e804; type addrtable; };
+
+range { start $e805; end $e80b; type texttable; name "STRSLW_nfa"; comment "ST-R/W_nfa"; };
+range { start $e80c; end $e80f; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e810; end $e839; type addrtable; };
+
+range { start $e83a; end $e842; type texttable; name "FILENAME_nfa"; };
+range { start $e843; end $e846; type addrtable; };
+label { addr  $e845; name "FILENAME"; };
+range { start $e847; end $e856; type addrtable; };
+
+range { start $e857; end $e85c; type texttable; name "QFILE_nfa"; comment "?FILE_nfa"; };
+range { start $e85d; end $e860; type addrtable; };
+label { addr  $e85f;                            name "QFILE";     comment "?FILE"; };
+range { start $e861; end $e882; type addrtable; };
+
+range { start $e883; end $e888; type texttable; name "DOTFILE_nfa"; };
+range { start $e889; end $e88c; type addrtable; };
+label { addr  $e88b; name "DOTFILE"; };
+range { start $e88d; end $e890; type addrtable; };
+range { start $e891; end $e897; type texttable; };
+range { start $e898; end $e8b7; type addrtable; };
+range { start $e8b8; end $e8b9; type texttable; };
+range { start $e8ba; end $e8c5; type addrtable; };
+range { start $e8c6; end $e8c7; type texttable; };
+range { start $e8c8; end $e8d9; type addrtable; };
+
+range { start $e8da; end $e8df; type texttable; name "USING_nfa"; };
+range { start $e8e0; end $e8e3; type addrtable; };
+label { addr  $e8e2; name "USING"; };
+range { start $e8e4; end $e923; type addrtable; };
+range { start $e924; end $e92a; type texttable; };
+range { start $e92b; end $e994; type addrtable; };
+
+range { start $e995; end $e99a; type texttable; name "XFILE_nfa"; };
+range { start $e99b; end $e99e; type addrtable; };
+label { addr  $e99d; name "XFILE"; };
+range { start $e99f; end $e9ac; type addrtable; };
+
+range { start $e9ad; end $e9b1; type texttable; name "INIT_nfa"; };
+range { start $e9b2; end $e9b5; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e9b6; end $e9bd; type addrtable; };
+
+range { start $e9be; end $e9c1; type texttable; name "DIR_nfa"; };
+range { start $e9c2; end $e9c5; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e9c6; end $e9d5; type addrtable; };
+
+range { start $e9d6; end $e9d9; type texttable; name "DEL_nfa"; };
+range { start $e9da; end $e9dd; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e9de; end $e9ed; type addrtable; };
+
+range { start $e9ee; end $e9f2; type texttable; name "COPY_nfa"; };
+range { start $e9f3; end $e9f6; type addrtable; };
+#label { addr  $; name ""; };
+range { start $e9f7; end $ea34; type addrtable; };
+
+range { start $ea35; end $ea3c; type texttable; name "STARTUP_nfa"; };
+range { start $ea3d; end $ea40; type addrtable; };
+label { addr  $ea3f; name "STARTUP"; };
+range { start $ea41; end $eace; type addrtable; };
+range { start $eacf; end $ead8; type texttable; };
+range { start $ead9; end $eb00; type addrtable; };
+
+range { start $eb01; end $eb06; type texttable; name "SALOSTORE_nfa"; comment"SALO!_nfa"; };
+range { start $eb07; end $eb0a; type addrtable; };
+label { addr  $eb09;                            name "SALOSTORE";     comment "SALO!"; };
+range { start $eb0b; end $eb1e; type addrtable; };
+
+range { start $eb1f; end $eb24; type texttable; name "DOLSAVE_nfa";   comment "$SAVE_nfa"; };
+range { start $eb25; end $eb28; type addrtable; };
+label { addr  $eb27;                            name "DOLSAVE";       comment "$SAVE"; };
+range { start $eb29; end $eb3e; type addrtable; };
+
+range { start $eb3f; end $eb44; type texttable; name "DOLLOAD_nfa";   comment "$LOAD_nfa"; };
+range { start $eb45; end $eb48; type addrtable; };
+label { addr  $eb47;                            name "DOLLOAD";       comment "$LOAD"; };
+range { start $eb49; end $eb5e; type addrtable; };
+
+range { start $eb5f; end $eb65; type texttable; name "OV6502_nfa"; };
+range { start $eb66; end $eb69; type addrtable; };
+#label { addr  $; name ""; };
+range { start $eb6a; end $eb7d; type addrtable; };
+
+range { start $eb7e; end $eb81; type texttable; name "DIGIN_nfa"; comment "#IN_nfa"; };
+range { start $eb82; end $eb85; type addrtable; };
+label { addr  $eb84;                            name "DIGIN";     comment "#IN"; };
+range { start $eb86; end $ebb1; type addrtable; };
+
+range { start $ebb2; end $ebb6; type texttable; name "BMAP_nfa"; };
+range { start $ebb7; end $ebba; type addrtable; };
+label { addr  $ebb9; name "BMAP"; };
+range { start $ebbb; end $ebe4; type code; };
+
+range { start $ebe5; end $ebeb; type texttable; name "OVSAVE_nfa"; };
+range { start $ebec; end $ebef; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ebf0; end $ecab; type addrtable; };
+
+range { start $ecac; end $ecb4; type texttable; name "POVLOAD_nfa";  comment "(OVLOAD)_nfa"; };
+range { start $ecb5; end $ecb8; type addrtable; };
+label { addr  $ecb7;                            name "POVLOAD";      comment "(OVLOAD)"; };
+range { start $ecb9; end $ed30; type addrtable; };
+
+range { start $ed31; end $ed3a; type texttable; name "PPOVLOAD_nfa"; comment "(+OVLOAD)_nfa"; };
+range { start $ed3b; end $ed3e; type addrtable; };
+label { addr  $ed3d;                            name "PPOVLOAD";     comment "(+OVLOAD)"; };
+range { start $ed3f; end $ed58; type addrtable; };
+range { start $ed59; end $ed5e; type texttable; };
+range { start $ed5f; end $ed6a; type addrtable; };
+range { start $ed6b; end $ed71; type texttable; };
+range { start $ed72; end $ed79; type addrtable; };
+range { start $ed7a; end $ed91; type texttable; };
+range { start $ed92; end $ed99; type addrtable; };
+range { start $ed9a; end $ed9c; type texttable; };
+range { start $ed9d; end $edcc; type addrtable; };
+
+range { start $edcd; end $edd3; type texttable; name "OVLOAD_nfa"; };
+range { start $edd4; end $edd7; type addrtable; };
+#label { addr  $; name ""; };
+range { start $edd8; end $ede1; type addrtable; };
+
+range { start $ede2; end $ede9; type texttable; name "PlusOVLOAD_nfa"; comment "+OVLOAD_nfa"; };
+range { start $edea; end $eded; type addrtable; };
+#label { addr  $; name ""; };
+range { start $edee; end $edf7; type addrtable; };
+
+range { start $edf8; end $edfe; type texttable; name "UNLINK_nfa"; };
+range { start $edff; end $ee02; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ee03; end $ee34; type addrtable; };
+
+range { start $ee35; end $ee39; type texttable; name "EDIT_nfa"; };
+range { start $ee3a; end $ee3d; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ee3e; end $ee3f; type addrtable; };
+range { start $ee40; end $ee4c; type texttable; };
+range { start $ee4d; end $ee50; type addrtable; };
+
+range { start $ee51; end $ee5a; type texttable; name "ASSEMBLER_nfa"; };
+range { start $ee5b; end $ee5e; type addrtable; };
+label { addr  $ee5d; name "ASSEMBLER"; };
+range { start $ee5f; end $ee62; type addrtable; };
+range { start $ee63; end $ee72; type texttable; };
+range { start $ee73; end $ee76; type addrtable; };
+
+range { start $ee77; end $ee7b; type texttable; name "CODE_nfa"; };
+range { start $ee7c; end $ee7f; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ee80; end $ee85; type addrtable; };
+
+range { start $ee86; end $ee8b; type texttable; name "SEMICODE_nfa"; comment ";CODE_nfa"; };
+range { start $ee8c; end $ee8f; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ee90; end $ee95; type addrtable; };
+
+###########
+#
+###########
+range { start $ee96; end $ee99; type texttable; name "IOS_nfa"; };
+range { start $ee9a; end $ee9d; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ee9e; end $eea3; type addrtable; };
+label { addr  $eea2; name "IOS_LINK"; };
+
+range { start $eea4; end $eea8; type texttable; name "OPCH_nfa"; };
+range { start $eea9; end $eeac; type addrtable; };
+label { addr  $eeab; name "OPCH"; };
+range { start $eead; end $eec0; type addrtable; };
+
+range { start $eec1; end $eec5; type texttable; name "CLCH_nfa"; };
+range { start $eec6; end $eec9; type addrtable; };
+#label { addr  $; name ""; };
+range { start $eeca; end $eee3; type addrtable; };
+
+range { start $eee4; end $eee8; type texttable; name "KBDCOL_nfa"; comment "KBD:_nfa"; };
+range { start $eee9; end $eeec; type addrtable; };
+#label { addr  $; name ""; };
+range { start $eeed; end $eef2; type addrtable; };
+range { start $eef3; end $eeff; type code; name "DOKBDCOL"; };
+
+range { start $ef00; end $ef06; type texttable; name "QWERTY_nfa"; };
+range { start $ef07; end $ef0a; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ef0b; end $ef0b; type bytetable; };
+
+range { start $ef0c; end $ef12; type texttable; name "AZERTY_nfa"; };
+range { start $ef13; end $ef16; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ef17; end $ef17; type bytetable; };
+
+range { start $ef18; end $ef1e; type texttable; name "FRENCH_nfa"; };
+range { start $ef1f; end $ef22; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ef23; end $ef23; type bytetable; };
+
+range { start $ef24; end $ef2a; type texttable; name "ACCENT_nfa"; };
+range { start $ef2b; end $ef2e; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ef2f; end $ef2f; type bytetable; };
+
+range { start $ef30; end $ef35; type texttable; name "QTERM_nfa"; comment"?TERM_nfa"; };
+range { start $ef36; end $ef39; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ef3a; end $ef48; type code;      name "QTERM";     comment "?TERM_pfa"; };
+
+range { start $ef49; end $ef4d; type texttable; name "CKEY_nfa"; };
+range { start $ef4e; end $ef51; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ef52; end $ef5f; type code;      name "CKEY_pfa"; };
+
+range { start $ef60; end $ef65; type texttable; name "CEMIT_nfa"; };
+range { start $ef66; end $ef69; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ef6a; end $ef82; type code;      name "CEMIT_pfa"; };
+
+range { start $ef83; end $ef88; type texttable; name "INPUT_nfa"; };
+range { start $ef89; end $ef8a; type addrtable; };
+#label { addr  $; name ""; };
+range { start $ef8b; end $ef94; type addrtable; };
+
+range { start $ef95; end $ef9b; type texttable; name "OUTPUT_nfa"; };
+range { start $ef9c; end $ef9f; type addrtable; };
+#label { addr  $; name ""; };
+range { start $efa0; end $efa7; type addrtable; };
+
+range { start $efa8; end $efb0; type texttable; name "TERMINAL_nfa"; };
+range { start $efb1; end $efb4; type addrtable; };
+label { addr  $efb3; name "TERMINAL"; };
+range { start $efb5; end $efec; type addrtable; };
+
+range { start $efed; end $efef; type texttable; name "CR_nfa"; };
+range { start $eff0; end $eff3; type addrtable; };
+label { addr  $eff2; name "CR"; };
+range { start $eff4; end $f001; type addrtable; };
+
+range { start $f002; end $f005; type texttable; name "CLS_nfa"; };
+range { start $f006; end $f009; type addrtable; };
+label { addr  $f008; name "CLS"; };
+range { start $f00a; end $f011; type addrtable; };
+
+range { start $f012; end $f018; type texttable; name "GOTOXY_nfa"; };
+range { start $f019; end $f01c; type addrtable; };
+label { addr  $f01b; name "GOTOXY"; };
+range { start $f01d; end $f034; type addrtable; };
+
+range { start $f035; end $f03b; type texttable; name "QHIRES_nfa"; comment "?HIRES_nfa"; };
+range { start $f03c; end $f03f; type addrtable; };
+label { addr  $f03e;                            name "QHIRES";     comment "?HIRES"; };
+range { start $f040; end $f04b; type addrtable; };
+
+range { start $f04c; end $f051; type texttable; name "TSTLP_nfa"; comment "Appel Telemon XTSTLP ($1E)"; };
+range { start $f052; end $f055; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f056; end $f056; type bytetable; };
+
+range { start $f057; end $f05c; type texttable; name "VCOPY_nfa"; comment "Appel Telemon XHCVDT ($4B)"; };
+range { start $f05d; end $f060; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f061; end $f061; type bytetable; };
+
+range { start $f062; end $f067; type texttable; name "HCOPY_nfa"; comment "Appel Telemon XHCHRS ($4C)"; };
+range { start $f068; end $f06b; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f06c; end $f06c; type bytetable; };
+
+range { start $f06d; end $f072; type texttable; name "WCOPY_nfa"; comment "Appel Telemon XHCSCR ($4A)"; };
+range { start $f073; end $f076; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f077; end $f084; type addrtable; };
+
+range { start $f085; end $f08a; type texttable; name "PEMIT_nfa"; };
+range { start $f08b; end $f08e; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f08f; end $f09a; type addrtable; };
+
+range { start $f09b; end $f0a0; type texttable; name "SDUMP_nfa"; comment "Appel Telemon XSDUMP ($5C)"; };
+range { start $f0a1; end $f0a4; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f0a5; end $f0a5; type bytetable; };
+
+range { start $f0a6; end $f0ad; type texttable; name "CONSOLE_nfa"; comment "Appel Telemon XCONSO ($5D)"; };
+range { start $f0ae; end $f0b1; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f0b2; end $f0b2; type bytetable; };
+
+range { start $f0b3; end $f0b8; type texttable; name "SLOAD_nfa"; };
+range { start $f0b9; end $f0bc; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f0bd; end $f0d6; type addrtable; };
+
+range { start $f0d7; end $f0dd; type texttable; name "SLOADA_nfa"; };
+range { start $f0de; end $f0e1; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f0e2; end $f0fb; type addrtable; };
+
+range { start $f0fc; end $f101; type texttable; name "SSAVE_nfa"; };
+range { start $f102; end $f105; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f106; end $f111; type addrtable; };
+
+range { start $f112; end $f117; type texttable; name "SEMIT_nfa"; };
+range { start $f118; end $f11b; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f11c; end $f127; type addrtable; };
+
+range { start $f128; end $f12c; type texttable; name "RING_nfa"; comment "Appel Telemon XRING ($62)"; };
+range { start $f12d; end $f130; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f131; end $f131; type bytetable; };
+
+range { start $f132; end $f137; type texttable; name "WCXFI_nfa"; comment "Appel Telemon XWCXFI ($63)"; };
+range { start $f138; end $f13b; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f13c; end $f13c; type bytetable; };
+
+range { start $f13d; end $f142; type texttable; name "LIGNE_nfa"; comment "Appel Telemon XLIGNE ($64)"; };
+range { start $f143; end $f146; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f147; end $f147; type bytetable; };
+
+range { start $f148; end $f14d; type texttable; name "DECON_nfa"; comment "Appel Telemon XDECON ($65)"; };
+range { start $f14e; end $f151; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f152; end $f152; type bytetable; };
+
+range { start $f153; end $f158; type texttable; name "MLOAD_nfa"; };
+range { start $f159; end $f15c; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f15d; end $f176; type addrtable; };
+
+range { start $f177; end $f17d; type texttable; name "MLOADA_nfa"; };
+range { start $f17e; end $f181; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f182; end $f19b; type addrtable; };
+
+range { start $f19c; end $f1a1; type texttable; name "MSAVE_nfa"; };
+range { start $f1a2; end $f1a5; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f1a6; end $f1b1; type addrtable; };
+
+range { start $f1b2; end $f1b7; type texttable; name "MEMIT_nfa"; };
+range { start $f1b8; end $f1bb; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f1bc; end $f1c7; type addrtable; };
+
+range { start $f1c8; end $f1cc; type texttable; name "MNTL_nfa"; };
+range { start $f1cd; end $f1d0; type addrtable; };
+label { addr  $f1cf; name "MNTL"; };
+range { start $f1d1; end $f202; type code; };
+
+range { start $f203; end $f20a; type texttable; name "MINITEL_nfa"; };
+range { start $f20b; end $f20e; type addrtable; };
+label { addr  $f20d; name "MINITEL"; };
+range { start $f20f; end $f210; type addrtable; };
+
+range { start $f211; end $f212; type addrtable; name "MNTL0"; };
+range { start $f213; end $f216; type wordtable; };
+range { start $f217; end $f217; type code; };
+range { start $f218; end $f224; type code;      name "MNTL1"; };
+
+range { start $f225; end $f22c; type texttable; name "SERVEUR_nfa"; };
+range { start $f22d; end $f230; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f231; end $f25a; type addrtable; };
+
+range { start $f25b; end $f260; type texttable; name "APLIC_nfa"; };
+range { start $f261; end $f264; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f265; end $f272; type addrtable; };
+
+range { start $f273; end $f279; type texttable; name "TINPUT_nfa"; };
+range { start $f27a; end $f27d; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f27e; end $f297; type addrtable; };
+
+range { start $f298; end $f29c; type texttable; name "PAGE_nfa"; };
+range { start $f29d; end $f2a0; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f2a1; end $f2b8; type addrtable; };
+
+range { start $f2b9; end $f2bd; type texttable; name "TEXT_nfa"; comment "TEXT vocabulaire FORTH"; };
+range { start $f2be; end $f2c1; type addrtable; };
+label { addr  $f2c0;                            name "TEXT";     comment "TEXT vocabulaire FORTH"; };
+range { start $f2c2; end $f2d7; type addrtable; };
+
+range { start $f2d8; end $f2dc; type texttable; name "LINE_nfa"; comment "LINE vocabulaire FORTH"; };
+range { start $f2dd; end $f2e0; type addrtable; };
+label { addr  $f2df;                            name "LINE";     comment "LINE vocabulaire FORTH"; };
+range { start $f2e1; end $f2f8; type addrtable; };
+
+###########
+#
+###########
+range { start $f2f9; end $f2ff; type texttable; name "EDITOR_nfa"; };
+range { start $f300; end $f303; type addrtable; };
+label { addr  $f302; name "EDITOR"; };
+range { start $f304; end $f309; type addrtable; };
+label { addr  $f308; name "EDITOR_LINK"; };
+
+range { start $f30a; end $f30f; type texttable; name "WHERE_nfa"; };
+range { start $f310; end $f313; type addrtable; };
+label { addr  $f312; name "WHERE"; };
+range { start $f314; end $f321; type addrtable; };
+range { start $f322; end $f32a; type texttable; };
+range { start $f32b; end $f35a; type addrtable; };
+
+range { start $f35b; end $f362; type texttable; name "DIGLOCATE_nfa"; comment "#LOCATE_nfa"; };
+range { start $f363; end $f366; type addrtable; };
+label { addr  $f365;                            name "DIGLOCATE";     comment "#LOCATE"; };
+range { start $f367; end $f370; type addrtable; };
+
+range { start $f371; end $f376; type texttable; name "DIGLEAD_nfa";   comment "#LEAD_nfa"; };
+range { start $f377; end $f37a; type addrtable; };
+label { addr  $f379;                            name "DIGLEAD";       comment "#LEAD"; };
+range { start $f37b; end $f382; type addrtable; };
+
+range { start $f383; end $f387; type texttable; name "DIGLAG_nfa";    comment "#LAG_nfa"; };
+range { start $f388; end $f38b; type addrtable; };
+label { addr  $f38a;                            name "DIGLAG";        comment "#LAG"; };
+range { start $f38c; end $f399; type addrtable; };
+
+range { start $f39a; end $f39f; type texttable; name "DMOVE_nfa";     comment "-MOVE_nfa"; };
+range { start $f3a0; end $f3a3; type addrtable; };
+label { addr  $f3a2;                            name "DMOVE";         comment "-MOVE"; };
+range { start $f3a4; end $f3ad; type addrtable; };
+
+range { start $f3ae; end $f3af; type texttable; name "H_nfa"; };
+range { start $f3b0; end $f3b3; type addrtable; };
+label { addr  $f3b2; name "H"; };
+range { start $f3b4; end $f3c5; type addrtable; };
+
+range { start $f3c6; end $f3c7; type texttable; name "E_nfa"; };
+range { start $f3c8; end $f3cb; type addrtable; };
+label { addr  $f3ca; name "E"; };
+range { start $f3cc; end $f3d5; type addrtable; };
+
+range { start $f3d6; end $f3d7; type texttable; name "S_nfa"; };
+range { start $f3d8; end $f3db; type addrtable; };
+label { addr  $f3da; name "S"; };
+range { start $f3dc; end $f3fd; type addrtable; };
+
+range { start $f3fe; end $f3ff; type texttable; name "D_nfa"; };
+range { start $f400; end $f403; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f404; end $f423; type addrtable; };
+
+range { start $f424; end $f425; type texttable; name "M_nfa"; };
+range { start $f426; end $f429; type addrtable; };
+label { addr  $f428; name "M"; };
+range { start $f42a; end $f447; type addrtable; };
+
+range { start $f448; end $f449; type texttable; name "T_nfa"; };
+range { start $f44a; end $f44d; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f44e; end $f45f; type addrtable; };
+
+range { start $f460; end $f461; type texttable; name "L_nfa"; };
+range { start $f462; end $f465; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f466; end $f471; type addrtable; };
+
+range { start $f472; end $f473; type texttable; name "Reditor_nfa"; comment "R vocabulaire EDITOR"; };
+range { start $f474; end $f477; type addrtable; };
+label { addr  $f476;                            name "Reditor";     comment "R vocabulaire EDITOR"; };
+range { start $f478; end $f481; type addrtable; };
+
+range { start $f482; end $f483; type texttable; name "P_nfa"; };
+range { start $f484; end $f487; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f488; end $f48f; type addrtable; };
+
+range { start $f490; end $f491; type texttable; name "Ieditor_nfa"; comment "I vocabulaire EDITOR"; };
+range { start $f492; end $f495; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f496; end $f49d; type addrtable; };
+
+range { start $f49e; end $f4a1; type texttable; name "TOP_nfa"; };
+range { start $f4a2; end $f4a5; type addrtable; };
+label { addr  $f4a4; name "TOP"; };
+range { start $f4a6; end $f4ad; type addrtable; };
+
+range { start $f4ae; end $f4b3; type texttable; name "CLEAR_nfa"; };
+range { start $f4b4; end $f4b7; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f4b8; end $f4cd; type addrtable; };
+
+range { start $f4ce; end $f4d3; type texttable; name "MATCH_nfa"; };
+range { start $f4d4; end $f4d7; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f4d8; end $f523; type addrtable; };
+
+range { start $f524; end $f529; type texttable; name "ONELINE_nfa"; comment "1LINE_nfa"; };
+range { start $f52a; end $f52d; type addrtable; };
+label { addr  $f52c; name "ONELINE"; };
+range { start $f52e; end $f53b; type addrtable; };
+
+range { start $f53c; end $f540; type texttable; name "FIND_nfa"; };
+range { start $f541; end $f544; type addrtable; };
+label { addr  $f543; name "FIND"; };
+range { start $f545; end $f56a; type addrtable; };
+
+range { start $f56b; end $f571; type texttable; name "DELETE_nfa"; };
+range { start $f572; end $f575; type addrtable; };
+label { addr  $f574; name "DELETE"; };
+range { start $f576; end $f599; type addrtable; };
+
+range { start $f59a; end $f59b; type texttable; name "Neditor_nfa"; comment "N vocaublaire EDITOR"; };
+range { start $f59c; end $f59f; type addrtable; };
+label { addr  $f59e;                            name "Neditor";     comment "N vocaublaire EDITOR"; };
+range { start $f5a0; end $f5a7; type addrtable; };
+
+range { start $f5a8; end $f5a9; type texttable; name "F_nfa"; };
+range { start $f5aa; end $f5ad; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f5ae; end $f5b5; type addrtable; };
+
+range { start $f5b6; end $f5b7; type texttable; name "B_nfa"; };
+range { start $f5b8; end $f5bb; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f5bc; end $f5c5; type addrtable; };
+
+range { start $f5c6; end $f5c7; type texttable; name "X_nfa"; };
+range { start $f5c8; end $f5cb; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f5cc; end $f5dd; type addrtable; };
+
+range { start $f5de; end $f5e2; type texttable; name "TILL_nfa"; };
+range { start $f5e3; end $f5e6; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f5e7; end $f606; type addrtable; };
+
+range { start $f607; end $f608; type texttable; name "C_nfa"; };
+range { start $f609; end $f60c; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f60d; end $f648; type addrtable; };
+
+range { start $f649; end $f64b; type texttable; name "nu_nfa"; };
+range { start $f64c; end $f64f; type addrtable; };
+label { addr  $f64e; name "nu"; };
+range { start $f650; end $f6b1; type addrtable; };
+
+range { start $f6b2; end $f6b5; type texttable; name "NEW_nfa"; };
+range { start $f6b6; end $f6b9; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f6ba; end $f6c1; type addrtable; };
+
+range { start $f6c2; end $f6c7; type texttable; name "UNDER_nfa"; };
+range { start $f6c8; end $f6cb; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f6cc; end $f6d5; type addrtable; };
+
+range { start $f6d6; end $f6dd; type texttable; name "SCRMOVE_nfa"; };
+range { start $f6de; end $f6e1; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f6e2; end $f72b; type addrtable; };
+
+range { start $f72c; end $f733; type texttable; name "SCRCOPY_nfa"; };
+range { start $f734; end $f737; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f738; end $f73b; type addrtable; };
+range { start $f73c; end $f73f; type texttable; };
+range { start $f740; end $f74b; type addrtable; };
+range { start $f74c; end $f74e; type texttable; };
+range { start $f74f; end $f758; type addrtable; };
+range { start $f759; end $f75d; type texttable; };
+range { start $f75e; end $f761; type addrtable; };
+range { start $f762; end $f765; type texttable; };
+range { start $f766; end $f76d; type addrtable; };
+range { start $f76e; end $f770; type texttable; };
+range { start $f771; end $f77a; type addrtable; };
+range { start $f77b; end $f781; type texttable; };
+range { start $f782; end $f7b1; type addrtable; };
+
+#######
+#
+#######
+range { start $f7b2; end $f7b6; type texttable; name "LIFE_nfa"; };
+range { start $f7b7; end $f7ba; type addrtable; };
+#label { addr  $; name ""; };
+range { start $f7bb; end $f7c0; type addrtable; };
+label { addr  $f7bf; name "LIFE_LINK"; comment "VL0"; };
+
+range { start $f7c1; end $f7c4; type texttable; name "DXY_nfa"; };
+range { start $f7c5; end $f7c8; type addrtable; };
+label { addr  $f7c7; name "DXY"; };
+range { start $f7c9; end $f7ca; type addrtable; };
+
+range { start $f7cb; end $f7cf; type texttable; name "NEWm_nfa"; };
+range { start $f7d0; end $f7d3; type addrtable; };
+label { addr  $f7d2; name "NEWm"; };
+range { start $f7d4; end $f7d5; type addrtable; };
+
+range { start $f7d6; end $f7da; type texttable; name "OLDm_nfa"; };
+range { start $f7db; end $f7de; type addrtable; };
+label { addr  $f7dd; name "OLDm"; };
+range { start $f7df; end $f7e0; type addrtable; };
+
+range { start $f7e1; end $f7e5; type texttable; name "WRKm_nfa"; };
+range { start $f7e6; end $f7e9; type addrtable; };
+label { addr  $f7e8; name "WRKm"; };
+range { start $f7ea; end $f7eb; type addrtable; };
+
+range { start $f7ec; end $f7f0; type texttable; name "orgCARET_nfa"; comment "org^_nfa"; };
+range { start $f7f1; end $f7f4; type addrtable; };
+label { addr  $f7f3;                            name "orgCARET";     comment "org^"; };
+range { start $f7f5; end $f7f6; type addrtable; };
+
+range { start $f7f7; end $f7fb; type texttable; name "midCARET_nfa"; comment "mid^_nfa"; };
+range { start $f7fc; end $f7ff; type addrtable; };
+label { addr  $f7fe;                            name "midCARET";     comment "mid^"; };
+range { start $f800; end $f801; type addrtable; };
+
+range { start $f802; end $f806; type texttable; name "endCARET_nfa"; comment "end^_nfa"; };
+range { start $f807; end $f80a; type addrtable; };
+label { addr  $f809;                            name "endCARET";     comment "end^"; };
+range { start $f80b; end $f80c; type addrtable; };
+
+range { start $f80d; end $f810; type texttable; name "CCOLL_nfa";        comment "C:L_nfa"; };
+range { start $f811; end $f814; type addrtable; };
+label { addr  $f813;                            name "CCOLL";            comment "C:L"; };
+range { start $f815; end $f828; type addrtable; };
+
+range { start $f829; end $f82c; type texttable; name "LCOLC_nfa";        comment "L:C_nfa"; };
+range { start $f82d; end $f830; type addrtable; };
+label { addr  $f82f;                            name "LCOLC";            comment "L:C"; };
+range { start $f831; end $f844; type addrtable; };
+
+range { start $f845; end $f848; type texttable; name "CSTARL_nfa";       comment "C*L_nfa"; };
+range { start $f849; end $f84c; type addrtable; };
+label { addr  $f84b;                            name "CSTARL";           comment "C*L"; };
+range { start $f84d; end $f860; type addrtable; };
+
+range { start $f861; end $f863; type texttable; name "mDIG_nfa";         comment "m#_nfa"; };
+range { start $f864; end $f867; type addrtable; };
+label { addr  $f866;                            name "mDIG";             comment "m#"; };
+range { start $f868; end $f89b; type addrtable; };
+
+range { start $f89c; end $f8a1; type texttable; name "TOKEN_nfa"; };
+range { start $f8a2; end $f8a5; type addrtable; };
+label { addr  $f8a4; name "TOKEN"; };
+range { start $f8a6; end $f8a7; type wordtable; };
+
+range { start $f8a8; end $f8ae; type texttable; name "TXTORG_nfa"; };
+range { start $f8af; end $f8b2; type addrtable; };
+label { addr  $f8b1; name "TXTORG"; };
+range { start $f8b3; end $f8b4; type wordtable; };
+
+range { start $f8b5; end $f8ba; type texttable; name "PAINT_nfa"; };
+range { start $f8bb; end $f8be; type addrtable; };
+label { addr  $f8bd; name "PAINT"; };
+range { start $f8bf; end $f8e8; type addrtable; };
+
+range { start $f8e9; end $f8f0; type texttable; name "DOTCURSOR_nfa"; comment ".CURSOR_nfa"; };
+range { start $f8f1; end $f8f4; type addrtable; };
+label { addr  $f8f3;                            name "DOTCURSOR";     comment ".CURSOR"; };
+range { start $f8f5; end $f926; type addrtable; };
+
+range { start $f927; end $f92c; type texttable; name "DOTGENE_nfa"; comment ".GENE_nfa"; };
+range { start $f92d; end $f930; type addrtable; };
+label { addr  $f92f;                            name "DOTGENE";     comment ".GENE"; };
+range { start $f931; end $f938; type addrtable; };
+range { start $f939; end $f93e; type texttable; };
+range { start $f93f; end $f942; type addrtable; };
+range { start $f943; end $f945; type texttable; };
+range { start $f946; end $f955; type addrtable; };
+range { start $f956; end $f958; type texttable; };
+range { start $f959; end $f968; type addrtable; };
+
+range { start $f969; end $f96d; type texttable; name "DOTmLEN_nfa"; comment ".mLEN_nfa"; };
+range { start $f96e; end $f971; type addrtable; };
+label { addr  $f970;                            name "DOTmLET";     comment ".mLEN"; };
+range { start $f972; end $f97d; type addrtable; };
+
+range { start $f97e; end $f980; type texttable; name "mCOMMA_nfa"; comment "m,_nfa"; };
+range { start $f981; end $f984; type addrtable; };
+label { addr  $f983;                            name "mCOMMA";     comment "m,"; };
+range { start $f985; end $f996; type addrtable; };
+
+range { start $f997; end $f999; type texttable; name "mAT_nfa";    comment "m@_nfa"; };
+range { start $f99a; end $f99d; type addrtable; };
+label { addr  $f99c;                            name "mAT";        comment "m@"; };
+range { start $f99e; end $f9a7; type addrtable; };
+
+range { start $f9a8; end $f9aa; type texttable; name "mSTORE_nfa"; comment "m!_nfa"; };
+range { start $f9ab; end $f9ae; type addrtable; };
+label { addr  $f9ad;                            name "mSTORE";     comment "m!"; };
+range { start $f9af; end $f9b8; type addrtable; };
+
+range { start $f9b9; end $f9bb; type texttable; name "CARETCOMMA_nfa";  comment "^,_nfa : !!! REMPLACER .byte ''^'' par .byte $5E sinon XA insère la chaine et tout ce qui qui la suit sans le ^"; };
+range { start $f9bc; end $f9bf; type addrtable; };
+label { addr  $f9be;                            name "CARETCOMMA";      comment "^,"; };
+range { start $f9c0; end $f9cd; type addrtable; };
+
+range { start $f9ce; end $f9d4; type texttable; name "around_nfa"; };
+range { start $f9d5; end $f9d8; type addrtable; };
+label { addr  $f9d7; name "around"; };
+range { start $f9d9; end $f9ea; type addrtable; };
+
+range { start $f9eb; end $f9ee; type texttable; name "INI_nfa"; };
+range { start $f9ef; end $f9f2; type addrtable; };
+label { addr  $f9f1; name "INI"; };
+range { start $f9f3; end $fa6a; type addrtable; };
+
+range { start $fa6b; end $fa6e; type texttable; name "QFN_nfa"; };
+range { start $fa6f; end $fa72; type addrtable; };
+label { addr  $fa71; name "QFN"; };
+range { start $fa73; end $fa8a; type addrtable; };
+range { start $fa8b; end $fa90; type texttable; };
+range { start $fa91; end $fa96; type addrtable; };
+range { start $fa97; end $fa9c; type texttable; };
+range { start $fa9d; end $fac6; type addrtable; };
+
+range { start $fac7; end $facb; type texttable; name "GENE_nfa"; };
+range { start $facc; end $facf; type addrtable; };
+label { addr  $face; name "GENE"; };
+range { start $fad0; end $fbb3; type addrtable; };
+
+
+range { start $fbb4; end $fbb8; type texttable; name "DEMO_nfa"; };
+range { start $fbb9; end $fbbc; type addrtable; };
+#label { addr  $; name ""; };
+range { start $fbbd; end $fd40; type addrtable; };
+
+range { start $fd41; end $fd47; type texttable; name "ROMend_nfa"; };
+range { start $fd48; end $fd4b; type addrtable; };
+label { addr  $fd4a; name "ROMend"; };
+range { start $fd4c; end $fd4d; type addrtable; };
+
+
+range { start $fd4e; end $fd4f; type wordtable; name "DictInitTable"; comment "Taille de la table d'init du dictionnaire en RAM (copiée en $1404 par COLD)"; };
+range { start $fd50; end $fd51; type addrtable; name "ABORT_defer";   comment "+00 -> defer de ABORT"; };
+range { start $fd52; end $fd53; type addrtable; name "NUMBER_defer";  comment "+02 -> defer de NUMBER"; };
+range { start $fd54; end $fd55; type addrtable; name "PROMPT_defer";  comment "+04 -> defer de PROMPT"; };
+range { start $fd56; end $fd57; type bytetable; name "FORTH_voc";     comment "+06 -> Pour le vocabulaire FORTH"; };
+range { start $fd58; end $fd59; type addrtable; };
+range { start $fd5a; end $fd5b; type addrtable; name "QTERMINAL_defer"; comment "+10 -> defer de QTERMINAL (initialisé à QTERM par TERMINAL)"; };
+range { start $fd5c; end $fd5d; type addrtable; name "KEY_defer";     comment "+12 -> defer de KEY (initialisé à CKEY par TERMINAL)"; };
+range { start $fd5e; end $fd5f; type addrtable; name "EMIT_defer";    comment "+14 -> defer de EMIT (initialisé à CEMIT par TERMINAL)"; };
+range { start $fd60; end $fd61; type bytetable; name "SOUNDS_voc";    comment "+16 -> Pour le vocabulaire SOUNDS"; };
+range { start $fd62; end $fd63; type addrtable; };
+range { start $fd64; end $fd65; type bytetable; name "GRAFX_voc";     comment "+20 -> Pour le vocabulaire GRAFX"; };
+range { start $fd66; end $fd67; type addrtable; };
+range { start $fd68; end $fd69; type bytetable; name "WINDOWS_voc";   comment "+24 -> Pour le vocabulaire WINDOWS"; };
+range { start $fd6a; end $fd6b; type addrtable; };
+range { start $fd6c; end $fd6d; type bytetable; name "IOS_voc";       comment "+28 -> Pour le vocabulaire IOS"; };
+range { start $fd6e; end $fd6f; type addrtable; };
+range { start $fd70; end $fd71; type addrtable; name "MINITEL_defer"; comment "+32 -> defer de MINITEL"; };
+range { start $fd72; end $fd73; type bytetable; name "EDITOR_voc";    comment "+34 -> Pour le vocabulaire EDITOR"; };
+range { start $fd74; end $fd75; type addrtable; };
+range { start $fd76; end $fd77; type bytetable; name "LIFE_voc";      comment "+38 -> Pour le vocabulaire LIFE"; };
+range { start $fd78; end $fd79; type addrtable; };
+range { start $fd7a; end $fd87; type bytetable;                       comment "+40 -> Inutilisé"; };
+label { addr  $fd88;                            name "DictInitTableEnd"; };
+
+#range { start $; end $; type texttable; name ""; };
+#range { start $; end $; type addrtable; };
+#label { addr  $; name ""; };
+#range { start $; end $; type addrtable; };
+
+
+
+range { start $fd88; end $fff7; type bytetable; };
+range { start $fff8; end $fff9; type addrtable; };
+range { start $fffa; end $fffb; type bytetable; };
+range { start $fffc; end $ffff; type addrtable; };
+

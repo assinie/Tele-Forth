@@ -1,0 +1,70 @@
+; Fichier
+XOPEN  = $1A
+XCLOSE = $1D
+XNOMFI = $24
+XCOPY  = $38
+XDELN  = $4D
+XDIRN  = $56
+XINITI = $5C
+XLOAD  = $62
+XSAVE  = $6B
+XTRVNM = $7D
+XSVSEC = $8C
+XSAY   = $8F
+
+; Buffer
+XTSTBU = $56
+
+; Clavier
+XGOKBD = $52
+
+; Sons
+XSONPS = $40
+XEPSG  = $41
+XOUPS  = $42
+XZAP   = $46
+XSHOOT = $47
+XEXPLO = $9C
+XPING  = $9D
+
+; Video
+XTEXT  = $19
+XHIRES = $1A
+ZADCHA = $1D
+XCOSCR = $34
+XCSSCR = $35
+XSCRSE = $36
+XSCROH = $37
+XSCROB = $38
+XSCRNE = $39
+XPAPER = $92
+XINK   = $93
+XCHAR  = $97
+XSCHAR = $98
+
+; Horloge
+XCLCL  = $3D
+XWRCLK = $3E
+
+; Imprimante
+XTSTLP = $1E
+XLPRBI = $48
+XHCSCR = $4A
+
+; RS-232
+XSDUMP = $5C
+XSLOAD = $5E
+XSSAVE = $5F
+XSOUT  = $67
+
+; Minitel
+XHCVDT = $4B
+XCONSO = $5D
+XMLOAD = $60
+XMSAVE = $61
+XRING  = $62
+XWCXFI = $63
+XLIGNE = $64
+XDECON = $65
+XMOUT  = $66
+
