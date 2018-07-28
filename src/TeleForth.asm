@@ -9,6 +9,92 @@
     * = $c000
 #include "TeleForth.inc"
 
+#define COMPACT
+#define WITHOUT_FIGFORTH_BUG
+
+;#define WITH_DECOMPILER
+;#define WITH_SOUNDS_VOC
+;#define WITH_GRAFX_VOC
+
+; SCRW et CURSOR nécessaires pour TERMINAL
+#define WITH_WINDOWS_VOC
+
+;#define WITH_CLOCK
+;#define WITH_WAIT
+
+; R/W nécessaire pour FLUSH et BLOCK
+;#define WITH_STRATSED_MINIMAL
+;#define WITH_STRATSED
+
+;#define WITH_AUTOSTART_SUPPORT
+;#define WITH_OVERLAYS_SUPPORT
+;#define WITH_EXTERNAL_HELPERS
+
+; OPCH, QTERM, CKEY et CEMIT nécessaires pour TERMINAL
+#define WITH_IOS_VOC
+
+;#define WITH_IOS_PRINTER
+;#define WITH_IOS_SERIAL
+;#define WITH_IOS_MINITEL
+;#define WITH_TEXT_LINE
+;#define WITH_EDITOR_VOC
+;#define WITH_SCRMOVE_SCRCOPY
+;#define WITH_LIFE_VOC
+;#define WITH_LIFE_DEMO
+;#define WITH_ROMend
+
+#define WITH_CH376
+
+; ----------------------------------------------------------------------------
+
+#ifdef WITH_STRATSED
+#define WITH_STRATSED_MINIMAL
+#endif
+
+#ifdef WITH_AUTOSTART_SUPPORT
+#define WITH_STRATSED
+#endif
+
+#ifdef WITH_EXTERNAL_HELPERS
+#define WITH_OVERLAYS_SUPPORT
+#endif
+
+#ifdef WITH_CLOCK
+#define WITH_WINDOWS_VOC
+#endif
+
+#ifdef WITH_IOS_PRINTER
+#define WITH_IOSext_VOC
+#endif
+
+#ifdef WITH_IOS_SERIAL
+#define WITH_IOSext_VOC
+#endif
+
+#ifdef WITH_IOS_MINITEL
+#define WITH_IOSext_VOC
+#endif
+
+#ifdef WITH_IOSext_VOC
+#define WITH_IOS_VOC
+#endif
+
+#ifdef WITH_SCRMOVE_SCRCOPY
+#define WITH_EDITOR
+#endif
+
+#ifdef WITH_EDITOR_VOC
+#define WITH_TEXT_LINE
+#endif
+
+#ifdef WITH_LIFE_DEMO
+#define WITH_LIFE_VOC
+#endif
+
+#ifdef WITH_LIFE_VOC
+#define WITH_GRAFX_VOC
+#define WITH_WAIT
+#endif
 
 ; ----------------------------------------------------------------------------
 BOT             = $0000                        ; RES
@@ -63,8 +149,12 @@ PIO_addr        = $0566                        ; Utilisé pour le passage du reg
 _UAREA_         = $0800                        ; User Area (ex. CURRENT := $0822)
 DOSBUFFERS      = $0840                        ; Tampons DOS pour 2 fichiers
 _FIRST          = $1000                        ; Tampon pour 1 écran (FIRST)
-RAM_START       = $1404                        ; Zone pour le dictionnaire (LIMIT) - 1er mot utilisateur à partir de $143C
+RAM_START       = _FIRST+2+$0400+2             ; Zone pour le dictionnaire (LIMIT) - 1er mot utilisateur à partir de $143C
 SCRTXT          = $BB80                        ; Adresse de base de l'écran TEXT
+
+;last_voc_link   = $0000
+;PREV_VOC_LINK   = $0000
+
 ; ----------------------------------------------------------------------------
 ORIGIN:
         nop
@@ -79,7 +169,7 @@ ORIGIN:
 ; ----------------------------------------------------------------------------
 ; adresse mot le plus récent: ROMend_nfa
 NTOP:
-        .word   ROMend_nfa
+        .word   last_forth_word_nfa
 ; ----------------------------------------------------------------------------
 BSCH:
         .word   $007F
@@ -104,7 +194,7 @@ PDP:
 ; ----------------------------------------------------------------------------
 ; adresse VOC-LINK du vocabulaire le plus récent: LIFE-LINK
 PVOCLINK:
-        .word   LIFE_LINK
+        .word   last_voc_link
 ; ----------------------------------------------------------------------------
 SYSTEM:
         .word   $0004,$5ED2
@@ -146,7 +236,7 @@ NOOP_nfa:
         .byte   $D0
 ; ----------------------------------------------------------------------------
         .word   $00
-LC05C:
+NOOP:
         .word   NEXT
 ; ----------------------------------------------------------------------------
 NEXT:
@@ -810,6 +900,8 @@ USTAR_nfa:
 USTAR:
         .word   LC3B8
 ; ----------------------------------------------------------------------------
+; BUG: HEX 16A1 16A1 U* D. -> 01001141 au lieu de 02001141
+; Correction du bug: http://forum.6502.org/viewtopic.php?f=9&t=689&start=30#p34890
 LC3B8:
         lda     SECOND,x
         sta     N
@@ -833,11 +925,14 @@ LC3C6:
         sta     SECOND+1,x
         bcc     LC3E1
         inc     BOT,x
+#ifdef WITHOUT_FIGFORTH_BUG
+        bne     LC3E1
+        inc     BOT+1,x
+#endif
 LC3E1:
         dey
         bne     LC3C6
         jmp     NEXT
-
 ; ----------------------------------------------------------------------------
 ; U/_nfa
 USL_nfa:
@@ -850,6 +945,8 @@ USL_nfa:
 USL:
         .word   LC3EE
 ; ----------------------------------------------------------------------------
+; BUG: HEX 80000000. 8001 U/ U. U. -> 0 0 au lieu de FFFE 0002
+; Correction du bug: http://6502org.wikidot.com/errata-software-figforth
 LC3EE:
         lda     $04  ,x
         ldy     SECOND,x
@@ -866,14 +963,18 @@ LC3EE:
 LC404:
         rol     $04  ,x
         rol     $05  ,x
-        sec
         lda     $04  ,x
+#ifdef WITHOUT_FIGFORTH_BUG
+        bcs     L0446
+#endif
+        sec
         sbc     BOT,x
         tay
         lda     $05  ,x
         sbc     BOT+1,x
         bcc     LC418
         sty     $04  ,x
+L0442:
         sta     $05  ,x
 LC418:
         rol     SECOND,x
@@ -882,6 +983,15 @@ LC418:
         bne     LC404
         jmp     POP
 
+#ifdef WITHOUT_FIGFORTH_BUG
+L0446:
+        sbc     BOT,x
+        sta     $04  ,x
+        lda     $05  ,x
+        sbc     BOT+1,x
+        sec
+        bcs     L0442
+#endif
 ; ----------------------------------------------------------------------------
 AND_nfa:
         .byte   $83
@@ -1375,9 +1485,8 @@ GREAT:
         .word   DOCOL
         .word   SUB
         .word   ZGREAT
+        .word   SEMIS
 ; ----------------------------------------------------------------------------
-        .byte   $82
-        .byte   $C4
 ; -_nfa
 SUB_nfa:
         .byte   $81,$AD
@@ -3405,7 +3514,13 @@ DLITERAL:
         .word   LITERAL
 LCFD2:
         .word   SEMIS
+
+-last_forth_word_nfa = DLITERAL_nfa
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_DECOMPILER
+#echo "Ajout du mini décompilateur"
+
 backslash_C_nfa:
         .byte   $82
         .byte   "\"
@@ -3493,13 +3608,17 @@ LD04A:
         .word   PLOOP
         .word   LD04A
         .word   SEMIS
+
+-last_forth_word_nfa = backslash_D_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
 WORD_nfa:
         .byte   $84
         .byte   "WOR"
         .byte   $C4
 ; ----------------------------------------------------------------------------
-        .word   backslash_D_nfa
+        .word   last_forth_word_nfa
 WORD:
         .word   DOCOL
         .word   BLK
@@ -3950,7 +4069,9 @@ MSG:
         .byte   $0D,$0A
         .byte   "de Christophe LAVARENNE"
 
+#ifndef COMPACT
 .dsb $D524-*,$00
+#endif
 
 MESSAGE_nfa:
         .byte   $87
@@ -4229,6 +4350,9 @@ ABORT:
         .word   DODEFER
         .word   RAM_START
 ; ----------------------------------------------------------------------------
+; Nécessite le mot WHERE défini avec le vocabulaire EDITOR
+; TODO: Vectoriser ERROR pour pouvoir avoir une version avec et sans WHERE
+;       Ou vectoriser WHERE...
 ERROR_nfa:
         .byte   $85
         .byte   "ERRO"
@@ -4254,6 +4378,7 @@ LD6D4:
 ; ----------------------------------------------------------------------------
         .word   MESSAGE
         .word   SPstore
+#ifdef WITH_EDITOR_VOC
         .word   BLK
         .word   AT
         .word   DDUP
@@ -4263,6 +4388,7 @@ LD6D4:
         .word   AT
         .word   SWAP
         .word   WHERE
+#endif
 LD6F6:
         .word   QUIT
         .word   SEMIS
@@ -4928,6 +5054,8 @@ DOVOC:
         .word   STORE
         .word   SEMIS
 ; ----------------------------------------------------------------------------
+; Vocabulaire FORTH
+
 FORTH_nfa:
         .byte   $C5
         .byte   "FORT"
@@ -4941,6 +5069,9 @@ FORTH_pfa:
         .word   FORTH_voc
 FORTH_LINK:
         .word   $00
+
+last_voc_link = FORTH_LINK
+
 ; ----------------------------------------------------------------------------
 ; ?TERMINAL_nfa
 QTERMINAL_nfa:
@@ -5048,7 +5179,9 @@ COLD_nfa:
         .word   PABORT_nfa
 COLD:
         .word   DOCOL
+#ifdef WITH_ROMend
         .word   ROMend
+#endif
         .word   LIT
         .word   DictInitTable
         .word   DUPTOR
@@ -5252,6 +5385,7 @@ WHILE_nfa:
         .word   LIT
         .word   $03
         .word   SEMIS
+
 ; ----------------------------------------------------------------------------
 REPEAT_nfa:
         .byte   $C6
@@ -5617,15 +5751,19 @@ LDF40:
         .word   PLOOP
         .word   LDF40
         .word   SEMIS
+
+-last_forth_word_nfa = THRU_nfa
+
 ; ----------------------------------------------------------------------------
 ; LOAD-USING_nfa
+#ifdef WITH_STRATSED
 LOAD_USING_nfa:
         .byte   $8A
         .byte   "LOAD-USIN"
 
         .byte   $C7
 ; ----------------------------------------------------------------------------
-        .word   THRU_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   XFILE
         .word   USING
@@ -5649,6 +5787,11 @@ THRU_USING_nfa:
         .word   XFILE
         .word   DOTFILE
         .word   SEMIS
+
+-last_forth_word_nfa = THRU_USING_nfa
+
+#endif
+
 ; ----------------------------------------------------------------------------
 ; ?TERMSTOP_nfa
 QTERMSTOP_nfa:
@@ -5656,7 +5799,7 @@ QTERMSTOP_nfa:
         .byte   "?TERMSTO"
         .byte   $D0
 ; ----------------------------------------------------------------------------
-        .word   THRU_USING_nfa
+        .word   last_forth_word_nfa
 ; ?TERMSTOP
 QTERMSTOP:
         .word   DOCOL
@@ -6035,8 +6178,11 @@ LE1DD:
         .word   LE1DD
 LE1F5:
         .word   SEMIS
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_ROMend
 ; INIT-RAM: Copie $3c80 octets de $c37f vers $c380???
+; Utilisé uniquement par ROMend
 INIT_RAM:
         lda     #$3C
         sta     N+1
@@ -6053,6 +6199,7 @@ INIT_RAM:
         tya
         sta     (N+4),y
         jmp     LC35B
+#endif
 
 ; ----------------------------------------------------------------------------
 teleforth_signature:
@@ -6060,9 +6207,8 @@ teleforth_signature:
 
         .byte   $0D,$0A
         .byte   "(c) 1989 Thierry BESTEL"
-
-
         .byte   $0D,$0A,$00
+
 AYX_nfa:
         .byte   $83
         .byte   "AY"
@@ -6200,539 +6346,37 @@ LE2FF:
         .word   $B400
 LE303:
         .word   SEMIS
-; ----------------------------------------------------------------------------
-SOUNDS_nfa:
-        .byte   $C6
-        .byte   "SOUND"
-        .byte   $D3
-; ----------------------------------------------------------------------------
-        .word   HIMEM_nfa
-        .word   DODOES
-        .word   DOVOC
-        .word   SOUNDS_voc
-SOUNDS_LINK:
-        .word   FORTH_LINK
-; ----------------------------------------------------------------------------
-; PSG:_nfa
-PSGCOL_nfa:
-        .byte   $84
-        .byte   "PSG"
-        .byte   $BA
-; ----------------------------------------------------------------------------
-        .word   FORTH_voc
-        .word   DOCOL
-        .word   CREATE
-        .word   HERE
-        .word   LIT
-        .word   $0E
-        .word   ALLOT
-        .word   HERE
-        .word   PDO
-LE32D:
-        .word   I
-        .word   ONES
-        .word   CSTORE
-        .word   LIT
-        .word   $FFFF
-        .word   PPLOOP
-        .word   LE32D
-        .word   PSEMICODE
-; ----------------------------------------------------------------------------
-        stx     _XSAVE
-        ldy     #$02
-        lda     (W),y
-        tax
-        iny
-        lda     (W),y
-        tay
-        brk  :  .byte XSONPS                    ; Telemon
-        ldx     _XSAVE
-        jmp     NEXT
+
+-last_forth_word_nfa = HIMEM_nfa
 
 ; ----------------------------------------------------------------------------
-; PSG!_nfa
-PSGSTORE_nfa:
-        .byte   $84
-        .byte   "PSG"
-        .byte   $A1
-; ----------------------------------------------------------------------------
-        .word   PSGCOL_nfa
-        .word   DOCOL
-        .word   AYX
-        .word   TWOP
-        .word   CSTORE
-        .word   LIT
-        .word   XEPSG
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-PLAY_nfa:
-        .byte   $84
-        .byte   "PLA"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   PSGSTORE_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $43,$04
-; ----------------------------------------------------------------------------
-SOUND_nfa:
-        .byte   $85
-        .byte   "SOUN"
-        .byte   $C4
-; ----------------------------------------------------------------------------
-        .word   PLAY_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $44,$03
-; ----------------------------------------------------------------------------
-MUSIC_nfa:
-        .byte   $85
-        .byte   "MUSI"
-        .byte   $C3
-; ----------------------------------------------------------------------------
-        .word   SOUND_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $45,$04
-; ----------------------------------------------------------------------------
-; Appel Telemon XOUPS ($42)
-OUPS_nfa:
-        .byte   $84
-        .byte   "OUP"
-        .byte   $D3
-; ----------------------------------------------------------------------------
-        .word   MUSIC_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XOUPS
-; ----------------------------------------------------------------------------
-; Appel Telemon XZAP ($46)
-ZAP_nfa:
-        .byte   $83
-        .byte   "ZA"
-        .byte   $D0
-; ----------------------------------------------------------------------------
-        .word   OUPS_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XZAP
-; ----------------------------------------------------------------------------
-; Appel Telemon XSHOOT ($47)
-SHOOT_nfa:
-        .byte   $85
-        .byte   "SHOO"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   ZAP_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XSHOOT
-; ----------------------------------------------------------------------------
-; Appel Telemon XEXPLO ($9C)
-EXPLODE_nfa:
-        .byte   $87
-        .byte   "EXPLOD"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   SHOOT_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XEXPLO
-; ----------------------------------------------------------------------------
-; Appel Telemon XPING ($9D)
-PING_nfa:
-        .byte   $84
-        .byte   "PIN"
-        .byte   $C7
-; ----------------------------------------------------------------------------
-        .word   EXPLODE_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XPING
-; ----------------------------------------------------------------------------
-GRAFX_nfa:
-        .byte   $C5
-        .byte   "GRAF"
-        .byte   $D8
-; ----------------------------------------------------------------------------
-        .word   SOUNDS_nfa
-        .word   DODOES
-        .word   DOVOC
-        .word   GRAFX_voc
-GRAFX_LINK:
-        .word   SOUNDS_LINK
-; ----------------------------------------------------------------------------
-; Vocabulaire GRAFX - Appel Telemon XTEXT ($19)
-TEXTgrafx_nfa:
-        .byte   $84
-        .byte   "TEX"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   FORTH_voc
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XTEXT
-; ----------------------------------------------------------------------------
-; Appel Telemon XHIRES ($1A)
-HIRES_nfa:
-        .byte   $85
-        .byte   "HIRE"
-        .byte   $D3
-; ----------------------------------------------------------------------------
-        .word   TEXTgrafx_nfa
-HIRES:
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XHIRES
-; ----------------------------------------------------------------------------
-ADRAW_nfa:
-        .byte   $85
-        .byte   "ADRA"
-        .byte   $D7
-; ----------------------------------------------------------------------------
-        .word   HIRES_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $8D,$84
-; ----------------------------------------------------------------------------
-DRAW_nfa:
-        .byte   $84
-        .byte   "DRA"
-        .byte   $D7
-; ----------------------------------------------------------------------------
-        .word   ADRAW_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $8E,$82
-; ----------------------------------------------------------------------------
-CIRCLE_nfa:
-        .byte   $86
-        .byte   "CIRCL"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   DRAW_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $8F,$81
-; ----------------------------------------------------------------------------
-CURSET_nfa:
-        .byte   $86
-        .byte   "CURSE"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   CIRCLE_nfa
-CURSET:
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $90,$82
-; ----------------------------------------------------------------------------
-CURMOV_nfa:
-        .byte   $86
-        .byte   "CURMO"
-        .byte   $D6
-; ----------------------------------------------------------------------------
-        .word   CURSET_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $91,$82
-; ----------------------------------------------------------------------------
-BOX_nfa:
-        .byte   $83
-        .byte   "BO"
-        .byte   $D8
-; ----------------------------------------------------------------------------
-        .word   CURMOV_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $94,$82
-; ----------------------------------------------------------------------------
-ABOX_nfa:
-        .byte   $84
-        .byte   "ABO"
-        .byte   $D8
-; ----------------------------------------------------------------------------
-        .word   BOX_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $95,$84
-; ----------------------------------------------------------------------------
-PAVE_nfa:
-        .byte   $84
-        .byte   "PAV"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   ABOX_nfa
-        .word   DOHRS
-; ----------------------------------------------------------------------------
-        .byte   $96,$83
-; ----------------------------------------------------------------------------
-PAPER_nfa:
-        .byte   $85
-        .byte   "PAPE"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   PAVE_nfa
-        .word   DOCOL
-        .word   SWAP
-        .word   AYX
-        .word   TWOSTORE
-        .word   LIT
-        .word   XPAPER
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-INK_nfa:
-        .byte   $83
-        .byte   "IN"
-        .byte   $CB
-; ----------------------------------------------------------------------------
-        .word   PAPER_nfa
-        .word   DOCOL
-        .word   SWAP
-        .word   AYX
-        .word   TWOSTORE
-        .word   LIT
-        .word   XINK
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-FB_nfa:
-        .byte   $82
-        .byte   "F"
-        .byte   $C2
-; ----------------------------------------------------------------------------
-        .word   INK_nfa
-FB:
-        .word   DOCOL
-        .word   LIT
-        .word   $40
-        .word   USTAR
-        .word   DROP
-        .word   LIT
-        .word   hrsfb
-        .word   CSTORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-PATTERN_nfa:
-        .byte   $87
-        .byte   "PATTER"
-        .byte   $CE
-; ----------------------------------------------------------------------------
-        .word   FB_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   hrspat
-        .word   CSTORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-HEMIT_nfa:
-        .byte   $85
-        .byte   "HEMI"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   PATTERN_nfa
-        .word   DOCOL
-        .word   AYX
-        .word   CSTORE
-        .word   LIT
-        .word   XCHAR
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-HTYPE_nfa:
-        .byte   $85
-        .byte   "HTYP"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   HEMIT_nfa
-        .word   DOCOL
-        .word   SWAP
-        .word   AYX
-        .word   TWOSTORE
-        .word   LIT
-        .word   XSCHAR
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-ADCHAR_nfa:
-        .byte   $86
-        .byte   "ADCHA"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   HTYPE_nfa
-        .word   DOCOL
-        .word   AYX
-        .word   CSTORE
-        .word   LIT
-        .word   ZADCHA
-        .word   MON
-        .word   AYX
-        .word   AT
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; CHAR:_nfa
-CHARCOL_nfa:
-        .byte   $85
-        .byte   "CHAR"
-        .byte   $BA
-; ----------------------------------------------------------------------------
-        .word   ADCHAR_nfa
-        .word   DOCOL
-        .word   BUILDS
-        .word   HERE
-        .word   LIT
-        .word   $09
-        .word   ALLOT
-        .word   HERE
-        .word   PDO
-LE4FB:
-        .word   I
-        .word   ONES
-        .word   CSTORE
-        .word   LIT
-        .word   $FFFF
-        .word   PPLOOP
-        .word   LE4FB
-        .word   ZERO
-        .word   CCOMMA
-        .word   DOES
-        .word   AYX
-        .word   STORE
-        .word   LIT
-        .word   XSCRNE
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-WINDOWS_nfa:
-        .byte   $C7
-        .byte   "WINDOW"
-        .byte   $D3
-; ----------------------------------------------------------------------------
-        .word   GRAFX_nfa
-        .word   DODOES
-        .word   DOVOC
-        .word   WINDOWS_voc
-WINDOWS_LINK:
-        .word   GRAFX_LINK
-; ----------------------------------------------------------------------------
-; WINDOW:_nfa
-WINDOWCOL_nfa:
-        .byte   $87
-        .byte   "WINDOW"
-        .byte   $BA
-; ----------------------------------------------------------------------------
-        .word   FORTH_voc
-        .word   DOCOL
-        .word   BUILDS
-        .word   ROT
-        .word   TOR
-        .word   ROT
-        .word   CCOMMA
-        .word   RFROM
-        .word   CCOMMA
-        .word   SWAP
-        .word   CCOMMA
-        .word   CCOMMA
-        .word   LIT
-        .word   SCRTXT
-        .word   COMMA
-        .word   DOES
-DOWINDOW:
-        .word   AYX
-        .word   TWOSTORE
-        .word   LIT
-        .word   XSCRSE
-        .word   MON
-        .word   LIT
-        .word   XCSSCR
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-MSGW_nfa:
-        .byte   $84
-        .byte   "MSG"
-        .byte   $D7
-; ----------------------------------------------------------------------------
-        .word   WINDOWCOL_nfa
-        .word   DODOES
-        .word   DOWINDOW
-; ----------------------------------------------------------------------------
-        .byte   $00,$27,$00,$00,$80,$BB
-; ----------------------------------------------------------------------------
-SCRW_nfa:
-        .byte   $84
-        .byte   "SCR"
-        .byte   $D7
-; ----------------------------------------------------------------------------
-        .word   MSGW_nfa
-SCRW:
-        .word   DODOES
-        .word   DOWINDOW
-; ----------------------------------------------------------------------------
-        .byte   $00,$27,$01,$1B,$80,$BB
-; ----------------------------------------------------------------------------
-CURSOR_nfa:
-        .byte   $86
-        .byte   "CURSO"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   SCRW_nfa
-CURSOR:
-        .word   LE594
-; ----------------------------------------------------------------------------
-LE594:
-        stx     _XSAVE
-        lsr     BOT,x
-        lda     SECOND,x
-        tax
-        bcc     LE5A2
-        brk  :  .byte XCSSCR                    ; Telemon
-        jmp     LE5A4
+; Vocabulaire SOUNDS
+#ifdef WITH_SOUNDS_VOC
+#include "Sounds.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
-LE5A2:
-        brk  :  .byte XCOSCR                    ; Telemon
-LE5A4:
-        ldx     _XSAVE
-        jmp     POPTWO
+; Vocabulaire GRAFX
+#ifdef WITH_GRAFX_VOC
+#include "Grafx.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
-SCROLL_nfa:
-        .byte   $86
-        .byte   "SCROL"
-        .byte   $CC
-; ----------------------------------------------------------------------------
-        .word   CURSOR_nfa
-        .word   LE5B4
-; ----------------------------------------------------------------------------
-LE5B4:
-        lda     #$04
-        jsr     SETUP
-        stx     _XSAVE
-        lda     N+6
-        sta     SCRNB
-        ldx     N+4
-        ldy     N+2
-        lda     N
-        bne     LE5CC
-        brk  :  .byte XSCROB                    ; Telemon
-        jmp     LE5CE
+; Vocabulaire WINDOWS
+#ifdef WITH_WINDOWS_VOC
+#include "Windows.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
-LE5CC:
-        brk  :  .byte XSCROH                    ; Telemon
-LE5CE:
-        ldx     _XSAVE
-        jmp     NEXT
+#ifdef WITH_CLOCK
+#echo "Ajout du mot CLOCK"
 
-; ----------------------------------------------------------------------------
 CLOCK_nfa:
         .byte   $85
         .byte   "CLOC"
         .byte   $CB
 ; ----------------------------------------------------------------------------
-        .word   WINDOWS_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   ZERO
         .word   POF
@@ -6779,13 +6423,20 @@ LE62B:
         .word   DROP
 LE62D:
         .word   SEMIS
+
+-last_forth_word_nfa = CLOCK_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_WAIT
+#echo "Ajout du mot WAIT"
+
 WAIT_nfa:
         .byte   $84
         .byte   "WAI"
         .byte   $D4
 ; ----------------------------------------------------------------------------
-        .word   CLOCK_nfa
+        .word   last_forth_word_nfa
 WAIT:
         .word   DOCOL
         .word   ZERO
@@ -6848,569 +6499,33 @@ LE69C:
         .word   DROP
 LE69E:
         .word   SEMIS
-; ----------------------------------------------------------------------------
-; (DOS)_nfa -> Appel de la procédure Stratsed $FFxx
-PDOS_nfa:
-        .byte   $85
-        .byte   "(DOS"
-        .byte   $A9
-; ----------------------------------------------------------------------------
-        .word   WAIT_nfa
-; (DOS)
-PDOS:
-        .word   LE6AA
-; ----------------------------------------------------------------------------
-LE6AA:
-        lda     flgtel
-        lsr
-        bcc     LE6B5
-        lda     #$08
-        jmp     LE6F2
+
+-last_forth_word_nfa = WAIT_nfa
+
+#endif
 
 ; ----------------------------------------------------------------------------
-LE6B5:
-        sty     errnb
-        sty     bnkcib
-        lda     BOT,x
-        sta     vexbnk+1
-        dey
-        sty     vexbnk+2
-        stx     _XSAVE
-        php
-        tsx
-        dex
-        dex
-        dex
-        dex
-        stx     saves
-        lda     AYX_addr
-        ldy     AYX_addr+1
-        ldx     AYX_addr+2
-        lsr     PIO_addr
-        jsr     Exbnk
-        sta     AYX_addr
-        sty     AYX_addr+1
-        stx     AYX_addr+2
-        php
-        pla
-        sta     PIO_addr
-        plp
-        ldx     _XSAVE
-        lda     errnb
-LE6F2:
-        sta     BOT,x
-        jmp     NEXT
+#ifdef WITH_STRATSED_MINIMAL
+#include "Stratsed_minimal.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
-; Appel de la procédure Stratsed $FFxx avec vérification du code d'erreur
-DOS_nfa:
-        .byte   $83
-        .byte   "DO"
-        .byte   $D3
-; ----------------------------------------------------------------------------
-        .word   PDOS_nfa
-DOS:
-        .word   DOCOL
-        .word   PDOS
-        .word   DUP
-        .word   LIT
-        .word   $80
-        .word   OR
-        .word   QERROR
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-FSTR:
-        .byte   $82,$80
-        .byte   "A$      "
-        .byte   $82,$80
-        .byte   "B$      "
-        .byte   $82,$80
-        .byte   "C$      "
-        .byte   $82,$80
-        .byte   "D$      "
-        .byte   $FF
-; ----------------------------------------------------------------------------
-FRW:
-        ldy     #$80
-        lda     hrs3
-        bpl     LE749
-        lda     BUFP
-        sta     $61
-        lda     BUFP+1
-        sta     $62
-        sty     $60
-        jmp     LE751
+#ifdef WITH_STRATSED
+#include "Stratsed_extended.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
-LE749:
-        dey
-LE74A:
-        lda     ($61  ),y
-        sta     (BUFP),y
-        dey
-        bpl     LE74A
-LE751:
-        clc
-        lda     BUFP
-        adc     #$80
-        sta     BUFP
-        bcc     LE75C
-        inc     BUFP+1
-LE75C:
-        rts
+#ifldef STARTUP
+#else
+#echo "Ajout du mot STARTUP de base"
 
-; ----------------------------------------------------------------------------
-di_nfa:
-        .byte   $82
-        .byte   "d"
-        .byte   $E9
-; ----------------------------------------------------------------------------
-        .word   DOS_nfa
-di:
-        .word   LE764
-; ----------------------------------------------------------------------------
-LE764:
-        sei
-        jmp     NEXT
-
-; ----------------------------------------------------------------------------
-ei_nfa:
-        .byte   $82
-        .byte   "e"
-        .byte   $E9
-; ----------------------------------------------------------------------------
-        .word   di_nfa
-ei:
-        .word   LE76F
-; ----------------------------------------------------------------------------
-LE76F:
-        cli
-        jmp     NEXT
-
-; ----------------------------------------------------------------------------
-; R/W_nfa
-RSLW_nfa:
-        .byte   $83
-        .byte   "R/"
-        .byte   $D7
-; ----------------------------------------------------------------------------
-        .word   ei_nfa
-; R/W
-RSLW:
-        .word   DOCOL
-        .word   ZBRANCH
-        .word   LE787
-        .word   LIT
-        .word   $20
-        .word   BRANCH
-        .word   LE78B
-LE787:
-        .word   LIT
-        .word   $23
-LE78B:
-        .word   TOR
-        .word   OVER
-        .word   LIT
-        .word   BUFP
-        .word   STORE
-        .word   ONEP
-        .word   TWOSTAR
-        .word   ONEP
-        .word   DUP
-        .word   TWOS
-        .word   di
-        .word   PDO
-LE7A3:
-        .word   I
-        .word   LIT
-        .word   desalo
-        .word   STORE
-        .word   J
-        .word   PDOS
-        .word   LIT
-        .word   $0F
-        .word   EQUAL
-        .word   ZBRANCH
-        .word   LE7C1
-        .word   DUP
-        .word   B_BUF
-        .word   BLANKS
-        .word   LEAVE
-LE7C1:
-        .word   PLOOP
-        .word   LE7A3
-        .word   ei
-        .word   RFROMDROP
-        .word   DROP
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-DRIVE_nfa:
-        .byte   $85
-        .byte   "DRIV"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   RSLW_nfa
-        .word   DOCOL
-        .word   DUP
-        .word   ZLESS
-        .word   OVER
-        .word   LIT
-        .word   $03
-        .word   GREAT
-        .word   OR
-        .word   LIT
-        .word   $1C
-        .word   QERROR
-        .word   LIT
-        .word   tabdrv
-        .word   OVER
-        .word   PLUS
-        .word   CAT
-        .word   ZEQUAL
-        .word   LIT
-        .word   $8A
-        .word   QERROR
-        .word   LIT
-        .word   drvdef
-        .word   CSTORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; ST-R/W_nfa
-STRSLW_nfa:
-        .byte   $86
-        .byte   "ST-R/"
-        .byte   $D7
-; ----------------------------------------------------------------------------
-        .word   DRIVE_nfa
-        .word   DOCOL
-        .word   TOR
-        .word   LIT
-        .word   piste
-        .word   CSTORE
-        .word   LIT
-        .word   secteu
-        .word   CSTORE
-        .word   LIT
-        .word   rwbuf
-        .word   STORE
-        .word   RFROM
-        .word   ZBRANCH
-        .word   LE832
-        .word   LIT
-        .word   $A1
-        .word   BRANCH
-        .word   LE836
-LE832:
-        .word   LIT
-        .word   XSVSEC
-LE836:
-        .word   DOS
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-FILENAME_nfa:
-        .byte   $88
-        .byte   "FILENAM"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   STRSLW_nfa
-FILENAME:
-        .word   DOCOL
-        .word   COUNT
-        .word   SWAP
-        .word   AYX
-        .word   TWOSTORE
-        .word   LIT
-        .word   XNOMFI
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; ?FILE_nfa
-QFILE_nfa:
-        .byte   $85
-        .byte   "?FIL"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   FILENAME_nfa
-; ?FILE
-QFILE:
-        .word   DOCOL
-        .word   FILENAME
-        .word   AYX
-        .word   TWOP
-        .word   LIT
-        .word   $82
-        .word   CTST
-        .word   LIT
-        .word   $89
-        .word   QERROR
-        .word   LIT
-        .word   XTRVNM
-        .word   DOS
-        .word   PIO
-        .word   TWO
-        .word   CTST
-        .word   ZEQUAL
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-DOTFILE_nfa:
-        .byte   $85
-        .byte   ".FIL"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   QFILE_nfa
-DOTFILE:
-        .word   DOCOL
-        .word   CR
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $06
-        .byte   "Using "
-; ----------------------------------------------------------------------------
-        .word   LIT
-        .word   ficnum
-        .word   CAT
-        .word   ONES
-        .word   LIT
-        .word   $0260
-        .word   STAR
-        .word   LIT
-        .word   DOSBUFFERS+768
-        .word   PLUS
-        .word   COUNT
-        .word   LIT
-        .word   $41
-        .word   PLUS
-        .word   EMIT
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $01
-        .byte   "-"
-; ----------------------------------------------------------------------------
-        .word   DUP
-        .word   LIT
-        .word   $09
-        .word   DTRAILING
-        .word   TYPE
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $01
-        .byte   "."
-; ----------------------------------------------------------------------------
-        .word   LIT
-        .word   $09
-        .word   PLUS
-        .word   LIT
-        .word   $03
-        .word   DTRAILING
-        .word   TYPE
-        .word   SPACE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-USING_nfa:
-        .byte   $85
-        .byte   "USIN"
-        .byte   $C7
-; ----------------------------------------------------------------------------
-        .word   DOTFILE_nfa
-USING:
-        .word   DOCOL
-        .word   FLUSH
-        .word   LIT
-        .word   $08
-        .word   LIT
-        .word   ftype
-        .word   CSTORE
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   QFILE
-        .word   ZBRANCH
-        .word   LE91A
-        .word   LIT
-        .word   XCLOSE
-        .word   PDOS
-        .word   DROP
-        .word   LIT
-        .word   drvdef
-        .word   CAT
-        .word   LIT
-        .word   drive
-        .word   CSTORE
-        .word   LIT
-        .word   XOPEN
-        .word   DOS
-        .word   BRANCH
-        .word   LE991
-LE91A:
-        .word   LIT
-        .word   $81
-        .word   MESSAGE
-        .word   CR
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $06
-        .byte   "Creer "
-; ----------------------------------------------------------------------------
-        .word   HERE
-        .word   COUNT
-        .word   TYPE
-        .word   QOK
-        .word   ZBRANCH
-        .word   LE991
-        .word   LIT
-        .word   XCLOSE
-        .word   PDOS
-        .word   DROP
-        .word   ZERO
-        .word   LIT
-        .word   desalo
-        .word   STORE
-        .word   B_BUF
-        .word   LIT
-        .word   fisalo
-        .word   STORE
-        .word   LIT
-        .word   drvdef
-        .word   CAT
-        .word   LIT
-        .word   drive
-        .word   CSTORE
-        .word   LIT
-        .word   XOPEN
-        .word   DOS
-        .word   LIT
-        .word   FSTR
-        .word   LIT
-        .word   $06
-        .word   AT
-        .word   DUP
-        .word   LIT
-        .word   rwbuf
-        .word   STORE
-        .word   LIT
-        .word   $29
-        .word   CMOVE
-        .word   LIT
-        .word   $08
-        .word   AT
-        .word   LIT
-        .word   $0C
-        .word   PLUS
-        .word   AT
-        .word   AYX
-        .word   STORE
-        .word   LIT
-        .word   XSAY
-        .word   DOS
-LE991:
-        .word   DOTFILE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-XFILE_nfa:
-        .byte   $85
-        .byte   "XFIL"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   USING_nfa
-XFILE:
-        .word   DOCOL
-        .word   FLUSH
-        .word   LIT
-        .word   ficnum
-        .word   LIT
-        .word   $03
-        .word   TOGGLE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-INIT_nfa:
-        .byte   $84
-        .byte   "INI"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   XFILE_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   XINITI
-        .word   DOS
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-DIR_nfa:
-        .byte   $83
-        .byte   "DI"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   INIT_nfa
-        .word   DOCOL
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   FILENAME
-        .word   LIT
-        .word   XDIRN
-        .word   DOS
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-DEL_nfa:
-        .byte   $83
-        .byte   "DE"
-        .byte   $CC
-; ----------------------------------------------------------------------------
-        .word   DIR_nfa
-        .word   DOCOL
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   FILENAME
-        .word   LIT
-        .word   hrs1
-        .word   DOS
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-COPY_nfa:
-        .byte   $84
-        .byte   "COP"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   DEL_nfa
-        .word   DOCOL
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   FILENAME
-        .word   LIT
-        .word   bufnom
-        .word   LIT
-        .word   $0100
-        .word   LIT
-        .word   $0D
-        .word   CMOVE
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   FILENAME
-        .word   LIT
-        .word   bufnom
-        .word   LIT
-        .word   $010D
-        .word   LIT
-        .word   $0D
-        .word   CMOVE
-        .word   LIT
-        .word   $80
-        .word   LIT
-        .word   vasalo0
-        .word   STORE
-        .word   LIT
-        .word   XCOPY
-        .word   DOS
-        .word   SEMIS
 ; ----------------------------------------------------------------------------
 STARTUP_nfa:
         .byte   $87
         .byte   "STARTU"
         .byte   $D0
 ; ----------------------------------------------------------------------------
-        .word   COPY_nfa
+        .word   last_forth_word_nfa
 STARTUP:
         .word   DOCOL
         .word   LIT
@@ -7474,6 +6589,9 @@ LEA81:
         .word   LIT
         .word   xfield
         .word   CSTORE
+
+#ifdef WITH_AUTOSTART_SUPPORT
+#echo "Ajout du support autostart 'FORTH.DAT'"
         .word   LIT
         .word   FRW
         .word   LIT
@@ -7484,6 +6602,7 @@ LEA81:
         .word   LIT
         .word   bitmfc
         .word   STORE
+
         .word   PLITQ
 ; ----------------------------------------------------------------------------
         .byte   $09
@@ -7509,490 +6628,29 @@ LEA81:
         .word   ONE
         .word   LOAD
         .word   QUIT
+#endif
 LEAFF:
         .word   SEMIS
-; ----------------------------------------------------------------------------
-; SALO!_nfa
-SALOSTORE_nfa:
-        .byte   $85
-        .byte   "SALO"
-        .byte   $A1
-; ----------------------------------------------------------------------------
-        .word   STARTUP_nfa
-; SALO!
-SALOSTORE:
-        .word   DOCOL
-        .word   LIT
-        .word   vasalo0
-        .word   STORE
-        .word   LIT
-        .word   fisalo
-        .word   STORE
-        .word   LIT
-        .word   desalo
-        .word   STORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; $SAVE_nfa
-DOLSAVE_nfa:
-        .byte   $85
-        .byte   "$SAV"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   SALOSTORE_nfa
-; $SAVE
-DOLSAVE:
-        .word   DOCOL
-        .word   ZERO
-        .word   SALOSTORE
-        .word   LIT
-        .word   $40
-        .word   LIT
-        .word   ftype
-        .word   CSTORE
-        .word   LIT
-        .word   XSAVE
-        .word   DOS
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; $LOAD_nfa
-DOLLOAD_nfa:
-        .byte   $85
-        .byte   "$LOA"
-        .byte   $C4
-; ----------------------------------------------------------------------------
-        .word   DOLSAVE_nfa
-; $LOAD
-DOLLOAD:
-        .word   DOCOL
-        .word   ZERO
-        .word   LIT
-        .word   RAM_START+27772
-        .word   SALOSTORE
-        .word   LIT
-        .word   XLOAD
-        .word   DOS
-        .word   LIT
-        .word   fisalo
-        .word   AT
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-OV6502_nfa:
-        .byte   $86
-        .byte   "OV650"
-        .byte   $B2
-; ----------------------------------------------------------------------------
-        .word   DOLLOAD_nfa
-LEB68:
-        .word   DOCOL
-        .word   HERE
-        .word   DUP
-        .word   MINUS
-        .word   LIT
-        .word   $FF
-        .word   ANDforth
-        .word   DUP
-        .word   ALLOT
-        .word   BLANKS
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; #IN_nfa
-DIGIN_nfa:
-        .byte   $83
-        .byte   "#I"
-        .byte   $CE
-; ----------------------------------------------------------------------------
-        .word   OV6502_nfa
-; #IN
-DIGIN:
-        .word   DOCOL
-        .word   BLK
-        .word   AT
-        .word   TOR
-        .word   IN
-        .word   AT
-        .word   TOR
-        .word   ZERO
-        .word   BLK
-        .word   STORE
-        .word   QUERY
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   NUMBER
-        .word   DROP
-        .word   RFROM
-        .word   IN
-        .word   STORE
-        .word   RFROM
-        .word   BLK
-        .word   STORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-BMAP_nfa:
-        .byte   $84
-        .byte   "BMA"
-        .byte   $D0
-; ----------------------------------------------------------------------------
-        .word   DIGIN_nfa
-BMAP:
-        .word   LEBBB
-; ----------------------------------------------------------------------------
-LEBBB:
-        lda     BOT,x
-        and     #$07
-        ldy     #$03
-LEBC1:
-        lsr     BOT+1,x
-        ror     BOT,x
-        dey
-        bne     LEBC1
-        tay
-        clc
-        lda     BOT,x
-        adc     SECOND,x
-        sta     SECOND,x
-        lda     BOT+1,x
-        adc     SECOND+1,x
-        sta     SECOND+1,x
-        lda     #$00
-        sta     BOT+1,x
-        iny
-        sec
-LEBDC:
-        rol
-        dey
-        bne     LEBDC
-        sta     BOT,x
-        jmp     NEXT
+
+-last_forth_word_nfa = STARTUP_nfa
+
+#endif
 
 ; ----------------------------------------------------------------------------
-OVSAVE_nfa:
-        .byte   $86
-        .byte   "OVSAV"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   BMAP_nfa
-        .word   DOCOL
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   CONTEXT
-        .word   AT
-        .word   AT
-        .word   PFIND
-        .word   ZEQUAL
-        .word   ZERO
-        .word   QERROR
-        .word   DROP
-        .word   DUP
-        .word   NFA
-        .word   HERE
-        .word   ROT
-        .word   LFA
-        .word   AT
-        .word   PFIND
-        .word   ZEQUAL
-        .word   LIT
-        .word   $0A
-        .word   QERROR
-        .word   DROP
-        .word   NFA
-        .word   SWAP
-        .word   OVER
-        .word   LIT
-        .word   $FF
-        .word   ANDforth
-        .word   OVER
-        .word   LIT
-        .word   $FF
-        .word   ANDforth
-        .word   OR
-        .word   LIT
-        .word   $0B
-        .word   QERROR
-        .word   HERE
-        .word   DUPTOR
-        .word   OVER
-        .word   SUB
-        .word   R
-        .word   OVER
-        .word   LIT
-        .word   $08
-        .word   SLASH
-        .word   ONEP
-        .word   DUP
-        .word   ALLOT
-        .word   ERASE
-        .word   LATEST
-        .word   COMMA
-        .word   TWODUP
-        .word   COMMA
-        .word   COMMA
-        .word   ZERO
-        .word   PDO
-LEC62:
-        .word   COUNT
-        .word   ROT
-        .word   COUNT
-        .word   ROT
-        .word   XOR
-        .word   ZBRANCH
-        .word   LEC86
-        .word   J
-        .word   I
-        .word   ONES
-        .word   BMAP
-        .word   CSET
-        .word   ONEP
-        .word   SWAP
-        .word   ONEP
-        .word   TWO
-        .word   BRANCH
-        .word   LEC8A
-LEC86:
-        .word   SWAP
-        .word   ONE
-LEC8A:
-        .word   PPLOOP
-        .word   LEC62
-        .word   TWODROP
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   QFILE
-        .word   DROP
-        .word   HERE
-        .word   TWOS
-        .word   AT
-        .word   HERE
-        .word   DOLSAVE
-        .word   RFROM
-        .word   DP
-        .word   STORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; (OVLOAD)_nfa
-POVLOAD_nfa:
-        .byte   $88
-        .byte   "(OVLOAD"
-        .byte   $A9
-; ----------------------------------------------------------------------------
-        .word   OVSAVE_nfa
-; (OVLOAD)
-POVLOAD:
-        .word   DOCOL
-        .word   QFILE
-        .word   ZEQUAL
-        .word   LIT
-        .word   $81
-        .word   QERROR
-        .word   LEB68
-        .word   HERE
-        .word   DOLLOAD
-        .word   LIT
-        .word   $06
-        .word   SUB
-        .word   WCOUNT
-        .word   SWAP
-        .word   WCOUNT
-        .word   SWAP
-        .word   AT
-        .word   HERE
-        .word   SWAP
-        .word   SUB
-        .word   TOR
-        .word   DUP
-        .word   HERE
-        .word   PLUS
-        .word   OVER
-        .word   ZERO
-        .word   PDO
-LECED:
-        .word   DUP
-        .word   I
-        .word   BMAP
-        .word   CTST
-        .word   ZBRANCH
-        .word   LED09
-        .word   J
-        .word   HERE
-        .word   I
-        .word   PLUS
-        .word   PSTORE
-        .word   TWO
-        .word   BRANCH
-        .word   LED0B
-LED09:
-        .word   ONE
-LED0B:
-        .word   PPLOOP
-        .word   LECED
-        .word   DROP
-        .word   LATEST
-        .word   HERE
-        .word   PFA
-        .word   LFA
-        .word   STORE
-        .word   ALLOT
-        .word   RFROM
-        .word   PLUS
-        .word   DUP
-        .word   CURRENT
-        .word   AT
-        .word   STORE
-        .word   PFA
-        .word   CFA
-        .word   EXECUTE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; (+OVLOAD)_nfa
-PPOVLOAD_nfa:
-        .byte   $89
-        .byte   "(+OVLOAD"
-        .byte   $A9
-; ----------------------------------------------------------------------------
-        .word   POVLOAD_nfa
-; (+OVLOAD)
-PPOVLOAD:
-        .word   DOCOL
-        .word   DUP
-        .word   QFILE
-        .word   ZEQUAL
-        .word   ZBRANCH
-        .word   LED57
-        .word   COUNT
-        .word   TYPE
-        .word   LIT
-        .word   $81
-        .word   MESSAGE
-        .word   SPstore
-        .word   QUIT
-LED57:
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $05
-        .byte   "Here="
-; ----------------------------------------------------------------------------
-        .word   HERE
-        .word   LIT
-        .word   $06
-        .word   PLUS
-        .word   UDOT
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $06
-        .byte   "Himem="
-; ----------------------------------------------------------------------------
-        .word   HIMEM
-        .word   UDOT
-        .word   CR
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $17
-        .byte   "Ou voulez-vous reloger "
-
+#ifdef WITH_OVERLAYS_SUPPORT
+#include "Overlays.fth"
+#endif
 
 ; ----------------------------------------------------------------------------
-        .word   DUP
-        .word   COUNT
-        .word   TYPE
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $02
-        .byte   "? "
-; ----------------------------------------------------------------------------
-        .word   DIGIN
-        .word   LATEST
-        .word   TOR
-        .word   HERE
-        .word   TOR
-        .word   SWAP
-        .word   DP
-        .word   STORE
-        .word   POVLOAD
-        .word   R
-        .word   DP
-        .word   STORE
-        .word   LIT
-        .word   $FF81
-        .word   COMMA
-        .word   LATEST
-        .word   COMMA
-        .word   RFROM
-        .word   CURRENT
-        .word   AT
-        .word   STORE
-        .word   RFROM
-        .word   COMMA
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-OVLOAD_nfa:
-        .byte   $86
-        .byte   "OVLOA"
-        .byte   $C4
-; ----------------------------------------------------------------------------
-        .word   PPOVLOAD_nfa
-        .word   DOCOL
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   POVLOAD
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; +OVLOAD_nfa
-PlusOVLOAD_nfa:
-        .byte   $87
-        .byte   "+OVLOA"
-        .byte   $C4
-; ----------------------------------------------------------------------------
-        .word   OVLOAD_nfa
-        .word   DOCOL
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   PPOVLOAD
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-UNLINK_nfa:
-        .byte   $86
-        .byte   "UNLIN"
-        .byte   $CB
-; ----------------------------------------------------------------------------
-        .word   PlusOVLOAD_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   RAM_START+27389
-        .word   SPat
-        .word   CONTEXT
-        .word   AT
-        .word   AT
-        .word   PFIND
-        .word   ZEQUAL
-        .word   LIT
-        .word   $05
-        .word   QERROR
-        .word   DROP
-        .word   NIP
-        .word   DUP
-        .word   NFA
-        .word   LIT
-        .word   $20
-        .word   TOGGLE
-        .word   TWOS
-        .word   DUP
-        .word   AT
-        .word   SWAP
-        .word   TWOS
-        .word   STORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
+#ifdef WITH_EXTERNAL_HELPERS
+#echo "Ajout EDIT, ASSEMBLER, CODE, ;CODE"
+
 EDIT_nfa:
         .byte   $84
         .byte   "EDI"
         .byte   $D4
 ; ----------------------------------------------------------------------------
-        .word   UNLINK_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   PLITQ
 ; ----------------------------------------------------------------------------
@@ -8043,177 +6701,15 @@ SEMICODE_nfa:
         .word   TWO
         .word   ASSEMBLER
         .word   SEMIS
-; ----------------------------------------------------------------------------
-IOS_nfa:
-        .byte   $C3
-        .byte   "IO"
-        .byte   $D3
-; ----------------------------------------------------------------------------
-        .word   SEMICODE_nfa
-        .word   DODOES
-        .word   DOVOC
-        .word   IOS_voc
-IOS_LINK:
-        .word   WINDOWS_LINK
-; ----------------------------------------------------------------------------
-OPCH_nfa:
-        .byte   $84
-        .byte   "OPC"
-        .byte   $C8
-; ----------------------------------------------------------------------------
-        .word   FORTH_voc
-OPCH:
-        .word   DOCOL
-        .word   LIT
-        .word   $80
-        .word   OR
-        .word   AYX
-        .word   CSTORE
-        .word   LIT
-        .word   $03
-        .word   ANDforth
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-CLCH_nfa:
-        .byte   $84
-        .byte   "CLC"
-        .byte   $C8
-; ----------------------------------------------------------------------------
-        .word   OPCH_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $80
-        .word   OR
-        .word   AYX
-        .word   CSTORE
-        .word   LIT
-        .word   $03
-        .word   ANDforth
-        .word   LIT
-        .word   $04
-        .word   PLUS
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; KBD:_nfa
-KBDCOL_nfa:
-        .byte   $84
-        .byte   "KBD"
-        .byte   $BA
-; ----------------------------------------------------------------------------
-        .word   CLCH_nfa
-        .word   DOCOL
-        .word   CREATE
-        .word   CCOMMA
-        .word   PSEMICODE
-; ----------------------------------------------------------------------------
-DOKBDCOL:
-        stx     _XSAVE
-        ldy     #$02
-        lda     (W),y
-        brk  :  .byte XGOKBD                    ; Telemon
-        ldx     _XSAVE
-        jmp     NEXT
+
+-last_forth_word_nfa = SEMICODE_nfa
+#endif
 
 ; ----------------------------------------------------------------------------
-QWERTY_nfa:
-        .byte   $86
-        .byte   "QWERT"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   KBDCOL_nfa
-        .word   DOKBDCOL
-; ----------------------------------------------------------------------------
-        .byte   $00
-; ----------------------------------------------------------------------------
-AZERTY_nfa:
-        .byte   $86
-        .byte   "AZERT"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   QWERTY_nfa
-        .word   DOKBDCOL
-; ----------------------------------------------------------------------------
-        .byte   $01
-; ----------------------------------------------------------------------------
-FRENCH_nfa:
-        .byte   $86
-        .byte   "FRENC"
-        .byte   $C8
-; ----------------------------------------------------------------------------
-        .word   AZERTY_nfa
-        .word   DOKBDCOL
-; ----------------------------------------------------------------------------
-        .byte   $02
-; ----------------------------------------------------------------------------
-ACCENT_nfa:
-        .byte   $86
-        .byte   "ACCEN"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   FRENCH_nfa
-        .word   DOKBDCOL
-; ----------------------------------------------------------------------------
-        .byte   $04
-; ----------------------------------------------------------------------------
-; ?TERM_nfa
-QTERM_nfa:
-        .byte   $85
-        .byte   "?TER"
-        .byte   $CD
-; ----------------------------------------------------------------------------
-        .word   ACCENT_nfa
-        .word   QTERM
-; ----------------------------------------------------------------------------
-; ?TERM_pfa
-QTERM:
-        stx     _XSAVE
-        ldx     #$00
-        brk  :  .byte XTSTBU                    ; Telemon
-        bcs     LEF43
-        iny
-LEF43:
-        tya
-        ldx     _XSAVE
-        jmp     PUSH0A
-
-; ----------------------------------------------------------------------------
-CKEY_nfa:
-        .byte   $84
-        .byte   "CKE"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   QTERM_nfa
-        .word   CKEY_pfa
-; ----------------------------------------------------------------------------
-CKEY_pfa:
-        lda     $0567
-        ora     #$0C
-        sta     CallTel+1
-        jsr     CallTel
-        jmp     PUSH0A
-
-; ----------------------------------------------------------------------------
-CEMIT_nfa:
-        .byte   $85
-        .byte   "CEMI"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   CKEY_nfa
-        .word   CEMIT_pfa
-; ----------------------------------------------------------------------------
-CEMIT_pfa:
-        lda     $0567
-        tay
-        ora     #$10
-        sta     CallTel+1
-        lda     BOT,x
-        jsr     CallTel
-        lda     scrX,y
-        ldy     LCA07
-        sta     (UP),y
-        jmp     POP
+; Vocabulaire IOS (minimal)
+#ifdef WITH_IOS_VOC
+#include "IOS_minimal.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
 INPUT_nfa:
@@ -8221,7 +6717,7 @@ INPUT_nfa:
         .byte   "INPU"
         .byte   $D4
 ; ----------------------------------------------------------------------------
-        .word   IOS_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   PIO
         .word   ONEP
@@ -8240,6 +6736,8 @@ OUTPUT_nfa:
         .word   CSTORE
         .word   SEMIS
 ; ----------------------------------------------------------------------------
+; Necessite les mots SCRW et CURSOR du vocabulaire WINDOWS
+; Necessite les mots OPCH, QTERM, CKEY et CEMIT du vocabulaire IOS minimal
 TERMINAL_nfa:
         .byte   $88
         .byte   "TERMINA"
@@ -8343,420 +6841,19 @@ QHIRES:
         .word   $80
         .word   CTST
         .word   SEMIS
-; ----------------------------------------------------------------------------
-; Appel Telemon XTSTLP ($1E)
-TSTLP_nfa:
-        .byte   $85
-        .byte   "TSTL"
-        .byte   $D0
-; ----------------------------------------------------------------------------
-        .word   CEMIT_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XTSTLP
-; ----------------------------------------------------------------------------
-; Appel Telemon XHCVDT ($4B)
-VCOPY_nfa:
-        .byte   $85
-        .byte   "VCOP"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   TSTLP_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XHCVDT
-; ----------------------------------------------------------------------------
-; Appel Telemon XHCHRS ($4C)
-HCOPY_nfa:
-        .byte   $85
-        .byte   "HCOP"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   VCOPY_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   $4C
-; ----------------------------------------------------------------------------
-; Appel Telemon XHCSCR ($4A)
-WCOPY_nfa:
-        .byte   $85
-        .byte   "WCOP"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   HCOPY_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   SCRNB
-        .word   CSTORE
-        .word   LIT
-        .word   XHCSCR
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-PEMIT_nfa:
-        .byte   $85
-        .byte   "PEMI"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   WCOPY_nfa
-        .word   DOCOL
-        .word   AYX
-        .word   CSTORE
-        .word   LIT
-        .word   XLPRBI
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; Appel Telemon XSDUMP ($5C)
-SDUMP_nfa:
-        .byte   $85
-        .byte   "SDUM"
-        .byte   $D0
-; ----------------------------------------------------------------------------
-        .word   PEMIT_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XSDUMP
-; ----------------------------------------------------------------------------
-; Appel Telemon XCONSO ($5D)
-CONSOLE_nfa:
-        .byte   $87
-        .byte   "CONSOL"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   SDUMP_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XCONSO
-; ----------------------------------------------------------------------------
-SLOAD_nfa:
-        .byte   $85
-        .byte   "SLOA"
-        .byte   $C4
-; ----------------------------------------------------------------------------
-        .word   CONSOLE_nfa
-        .word   DOCOL
-        .word   PIO
-        .word   ONE
-        .word   CRST
-        .word   LIT
-        .word   XSLOAD
-        .word   MON
-        .word   LIT
-        .word   desalo
-        .word   AT
-        .word   LIT
-        .word   fisalo
-        .word   AT
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-SLOADA_nfa:
-        .byte   $86
-        .byte   "SLOAD"
-        .byte   $C1
-; ----------------------------------------------------------------------------
-        .word   SLOAD_nfa
-        .word   DOCOL
-        .word   PIO
-        .word   ONE
-        .word   CSET
-        .word   LIT
-        .word   desalo
-        .word   STORE
-        .word   LIT
-        .word   XSLOAD
-        .word   MON
-        .word   LIT
-        .word   fisalo
-        .word   AT
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-SSAVE_nfa:
-        .byte   $85
-        .byte   "SSAV"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   SLOADA_nfa
-        .word   DOCOL
-        .word   ZERO
-        .word   SALOSTORE
-        .word   LIT
-        .word   XSSAVE
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-SEMIT_nfa:
-        .byte   $85
-        .byte   "SEMI"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   SSAVE_nfa
-        .word   DOCOL
-        .word   AYX
-        .word   CSTORE
-        .word   LIT
-        .word   XSOUT
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; Appel Telemon XRING ($62)
-RING_nfa:
-        .byte   $84
-        .byte   "RIN"
-        .byte   $C7
-; ----------------------------------------------------------------------------
-        .word   SEMIT_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XRING
-; ----------------------------------------------------------------------------
-; Appel Telemon XWCXFI ($63)
-WCXFI_nfa:
-        .byte   $85
-        .byte   "WCXF"
-        .byte   $C9
-; ----------------------------------------------------------------------------
-        .word   RING_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XWCXFI
-; ----------------------------------------------------------------------------
-; Appel Telemon XLIGNE ($64)
-LIGNE_nfa:
-        .byte   $85
-        .byte   "LIGN"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   WCXFI_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XLIGNE
-; ----------------------------------------------------------------------------
-; Appel Telemon XDECON ($65)
-DECON_nfa:
-        .byte   $85
-        .byte   "DECO"
-        .byte   $CE
-; ----------------------------------------------------------------------------
-        .word   LIGNE_nfa
-        .word   DOMON
-; ----------------------------------------------------------------------------
-        .byte   XDECON
-; ----------------------------------------------------------------------------
-MLOAD_nfa:
-        .byte   $85
-        .byte   "MLOA"
-        .byte   $C4
-; ----------------------------------------------------------------------------
-        .word   DECON_nfa
-        .word   DOCOL
-        .word   PIO
-        .word   ONE
-        .word   CRST
-        .word   LIT
-        .word   XMLOAD
-        .word   MON
-        .word   LIT
-        .word   desalo
-        .word   AT
-        .word   LIT
-        .word   fisalo
-        .word   AT
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-MLOADA_nfa:
-        .byte   $86
-        .byte   "MLOAD"
-        .byte   $C1
-; ----------------------------------------------------------------------------
-        .word   MLOAD_nfa
-        .word   DOCOL
-        .word   PIO
-        .word   ONE
-        .word   CSET
-        .word   LIT
-        .word   desalo
-        .word   STORE
-        .word   LIT
-        .word   XMLOAD
-        .word   MON
-        .word   LIT
-        .word   fisalo
-        .word   AT
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-MSAVE_nfa:
-        .byte   $85
-        .byte   "MSAV"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   MLOADA_nfa
-        .word   DOCOL
-        .word   ZERO
-        .word   SALOSTORE
-        .word   LIT
-        .word   XMSAVE
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-MEMIT_nfa:
-        .byte   $85
-        .byte   "MEMI"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   MSAVE_nfa
-        .word   DOCOL
-        .word   AYX
-        .word   CSTORE
-        .word   LIT
-        .word   XMOUT
-        .word   MON
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-MNTL_nfa:
-        .byte   $84
-        .byte   "MNT"
-        .byte   $CC
-; ----------------------------------------------------------------------------
-        .word   MEMIT_nfa
-MNTL:
-        .word   LF1D1
-; ----------------------------------------------------------------------------
-LF1D1:
-        lda     #$03
-        sta     bnkcib
-        lda     BOT,x
-        sta     vexbnk+1
-        dey
-        sty     vexbnk+2
-        stx     _XSAVE
-        lda     AYX_addr
-        ldy     AYX_addr+1
-        ldx     AYX_addr+2
-        lsr     PIO_addr
-        jsr     Exbnk
-        sta     AYX_addr
-        sty     AYX_addr+1
-        stx     AYX_addr+2
-        php
-        pla
-        sta     PIO_addr
-        ldx     _XSAVE
-        jmp     POP
+
+-last_forth_word_nfa = QHIRES_nfa
 
 ; ----------------------------------------------------------------------------
-MINITEL_nfa:
-        .byte   $87
-        .byte   "MINITE"
-        .byte   $CC
-; ----------------------------------------------------------------------------
-        .word   MNTL_nfa
-MINITEL:
-        .word   DODEFER
-        .word   MINITEL_defer
-MNTL0:
-        .word   MINITEL
-; ----------------------------------------------------------------------------
-        .word   $F215,$F217
-; ----------------------------------------------------------------------------
-        rts
+#ifdef WITH_IOSext_VOC
+#include "IOS_extended.voc"
+#endif
 
-; ----------------------------------------------------------------------------
-MNTL1:
-        ldx     _XSAVE
-        lda     #$F2
-        sta     IP+1
-        lda     #$11
-        sta     IP
-        jmp     NEXT
-
-; ----------------------------------------------------------------------------
-SERVEUR_nfa:
-        .byte   $87
-        .byte   "SERVEU"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   MINITEL_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   v2dra
-        .word   CAT
-        .word   LIT
-        .word   $07
-        .word   ANDforth
-        .word   LIT
-        .word   vaplic
-        .word   CSTORE
-        .word   LIT
-        .word   MNTL1
-        .word   LIT
-        .word   vaplic+1
-        .word   STORE
-        .word   AYX
-        .word   TWOP
-        .word   CSTORE
-        .word   LIT
-        .word   $C5
-        .word   MNTL
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-APLIC_nfa:
-        .byte   $85
-        .byte   "APLI"
-        .byte   $C3
-; ----------------------------------------------------------------------------
-        .word   SERVEUR_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   hrs1
-        .word   STORE
-        .word   LIT
-        .word   $BF
-        .word   MNTL
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-TINPUT_nfa:
-        .byte   $86
-        .byte   "TINPU"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   APLIC_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $60
-        .word   CSTORE
-        .word   LIT
-        .word   $BC
-        .word   MNTL
-        .word   LIT
-        .word   $61
-        .word   AT
-        .word   LIT
-        .word   $FF
-        .word   CAT
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-PAGE_nfa:
-        .byte   $84
-        .byte   "PAG"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   TINPUT_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   RAM_START+35005
-        .word   LIT
-        .word   $07
-        .word   DTRAILING
-        .word   HERE
-        .word   CSTORE
-        .word   HERE
-        .word   COUNT
-        .word   CMOVE
-        .word   HERE
-        .word   SEMIS
 ; ----------------------------------------------------------------------------
 ; TEXT vocabulaire FORTH
+#ifdef WITH_TEXT_LINE
+#echo "Ajout des mots TEXT et LINE"
+
 TEXT_nfa:
         .byte   $84
         .byte   "TEX"
@@ -8800,1703 +6897,45 @@ LINE:
         .word   PLINE
         .word   DROP
         .word   SEMIS
-; ----------------------------------------------------------------------------
-EDITOR_nfa:
-        .byte   $C6
-        .byte   "EDITO"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   LINE_nfa
-EDITOR:
-        .word   DODOES
-        .word   DOVOC
-        .word   EDITOR_voc
-EDITOR_LINK:
-        .word   IOS_LINK
-; ----------------------------------------------------------------------------
-WHERE_nfa:
-        .byte   $85
-        .byte   "WHER"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   EDITOR_nfa
-WHERE:
-        .word   DOCOL
-        .word   DUP
-        .word   B_SCR
-        .word   SLASH
-        .word   DUP
-        .word   SCR
-        .word   STORE
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $08
-        .byte   "Ecran # "
-; ----------------------------------------------------------------------------
-        .word   DECIMAL
-        .word   DOT
-        .word   SWAP
-        .word   CSLL
-        .word   SLMOD
-        .word   CSLL
-        .word   STAR
-        .word   ROT
-        .word   BLOCK
-        .word   PLUS
-        .word   CR
-        .word   CSLL
-        .word   TYPE
-        .word   CR
-        .word   HERE
-        .word   CAT
-        .word   SUB
-        .word   SPACES
-        .word   LIT
-        .word   $5E
-        .word   EMIT
-        .word   EDITOR
-        .word   QUIT
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; #LOCATE_nfa
-DIGLOCATE_nfa:
-        .byte   $87
-        .byte   "#LOCAT"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   FORTH_voc
-; #LOCATE
-DIGLOCATE:
-        .word   DOCOL
-        .word   RNUM
-        .word   AT
-        .word   CSLL
-        .word   SLMOD
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; #LEAD_nfa
-DIGLEAD_nfa:
-        .byte   $85
-        .byte   "#LEA"
-        .byte   $C4
-; ----------------------------------------------------------------------------
-        .word   DIGLOCATE_nfa
-; #LEAD
-DIGLEAD:
-        .word   DOCOL
-        .word   DIGLOCATE
-        .word   LINE
-        .word   SWAP
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; #LAG_nfa
-DIGLAG_nfa:
-        .byte   $84
-        .byte   "#LA"
-        .byte   $C7
-; ----------------------------------------------------------------------------
-        .word   DIGLEAD_nfa
-; #LAG
-DIGLAG:
-        .word   DOCOL
-        .word   DIGLEAD
-        .word   DUPTOR
-        .word   PLUS
-        .word   CSLL
-        .word   RFROM
-        .word   SUB
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; -MOVE_nfa
-DMOVE_nfa:
-        .byte   $85
-        .byte   "-MOV"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   DIGLAG_nfa
-; -MOVE
-DMOVE:
-        .word   DOCOL
-        .word   LINE
-        .word   CSLL
-        .word   CMOVE
-        .word   UPDATE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-H_nfa:
-        .byte   $81,$C8
-; ----------------------------------------------------------------------------
-        .word   DMOVE_nfa
-H:      .word   DOCOL
-        .word   LINE
-        .word   PAD
-        .word   ONEP
-        .word   CSLL
-        .word   DUP
-        .word   PAD
-        .word   CSTORE
-        .word   CMOVE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-E_nfa:
-        .byte   $81,$C5
-; ----------------------------------------------------------------------------
-        .word   H_nfa
-E:      .word   DOCOL
-        .word   LINE
-        .word   CSLL
-        .word   BLANKS
-        .word   UPDATE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-S_nfa:
-        .byte   $81,$D3
-; ----------------------------------------------------------------------------
-        .word   E_nfa
-S:      .word   DOCOL
-        .word   DUP
-        .word   ONE
-        .word   SUB
-        .word   LIT
-        .word   $0E
-        .word   PDO
-LF3E8:
-        .word   I
-        .word   LINE
-        .word   I
-        .word   ONEP
-        .word   DMOVE
-        .word   LIT
-        .word   $FFFF
-        .word   PPLOOP
-        .word   LF3E8
-        .word   E
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-D_nfa:
-        .byte   $81,$C4
-; ----------------------------------------------------------------------------
-        .word   S_nfa
-        .word   DOCOL
-        .word   DUP
-        .word   H
-        .word   LIT
-        .word   $0F
-        .word   DUP
-        .word   ROT
-        .word   PDO
-LF412:
-        .word   I
-        .word   ONEP
-        .word   LINE
-        .word   I
-        .word   DMOVE
-        .word   PLOOP
-        .word   LF412
-        .word   E
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-M_nfa:
-        .byte   $81,$CD
-; ----------------------------------------------------------------------------
-        .word   D_nfa
-M:      .word   DOCOL
-        .word   RNUM
-        .word   PSTORE
-        .word   CR
-        .word   SPACE
-        .word   DIGLEAD
-        .word   TYPE
-        .word   LIT
-        .word   $7E
-        .word   EMIT
-        .word   DIGLAG
-        .word   TYPE
-        .word   DIGLOCATE
-        .word   DOT
-        .word   DROP
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-T_nfa:
-        .byte   $81,$D4
-; ----------------------------------------------------------------------------
-        .word   M_nfa
-        .word   DOCOL
-        .word   DUP
-        .word   CSLL
-        .word   STAR
-        .word   RNUM
-        .word   STORE
-        .word   H
-        .word   ZERO
-        .word   M
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-L_nfa:
-        .byte   $81,$CC
-; ----------------------------------------------------------------------------
-        .word   T_nfa
-        .word   DOCOL
-        .word   SCR
-        .word   AT
-        .word   LIST
-        .word   ZERO
-        .word   M
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; R vocabulaire EDITOR
-Reditor_nfa:
-        .byte   $81,$D2
-; ----------------------------------------------------------------------------
-        .word   L_nfa
-; R vocabulaire EDITOR
-Reditor:
-        .word   DOCOL
-        .word   PAD
-        .word   ONEP
-        .word   SWAP
-        .word   DMOVE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-P_nfa:
-        .byte   $81,$D0
-; ----------------------------------------------------------------------------
-        .word   Reditor_nfa
-        .word   DOCOL
-        .word   ONE
-        .word   TEXT
-        .word   Reditor
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; I vocabulaire EDITOR
-Ieditor_nfa:
-        .byte   $81,$C9
-; ----------------------------------------------------------------------------
-        .word   P_nfa
-LF494:
-        .word   DOCOL
-        .word   DUP
-        .word   S
-        .word   Reditor
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-TOP_nfa:
-        .byte   $83
-        .byte   "TO"
-        .byte   $D0
-; ----------------------------------------------------------------------------
-        .word   Ieditor_nfa
-TOP:
-        .word   DOCOL
-        .word   ZERO
-        .word   RNUM
-        .word   STORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-CLEAR_nfa:
-        .byte   $85
-        .byte   "CLEA"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   TOP_nfa
-        .word   DOCOL
-        .word   SCR
-        .word   STORE
-        .word   LIT
-        .word   $10
-        .word   ZERO
-        .word   PDO
-LF4C4:
-        .word   I
-        .word   E
-        .word   PLOOP
-        .word   LF4C4
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-MATCH_nfa:
-        .byte   $85
-        .byte   "MATC"
-        .byte   $C8
-; ----------------------------------------------------------------------------
-        .word   CLEAR_nfa
-LF4D6:
-        .word   DOCOL
-        .word   TOR
-        .word   TOR
-        .word   TWODUP
-        .word   RFROM
-        .word   R
-        .word   LC771
-        .word   RFROM
-        .word   SUB
-        .word   ZERO
-        .word   MAX
-        .word   OVER
-        .word   PLUS
-        .word   SWAP
-        .word   PDO
-LF4F4:
-        .word   TWODUP
-        .word   I
-        .word   SWAP
-        .word   SEQUAL
-        .word   ZBRANCH
-        .word   LF516
-        .word   I
-        .word   PLUS
-        .word   TOR
-        .word   TWODROP
-        .word   ZERO
-        .word   RFROM
-        .word   ROT
-        .word   SUB
-        .word   ZERO
-        .word   ZERO
-        .word   LEAVE
-LF516:
-        .word   PLOOP
-        .word   LF4F4
-        .word   TWODROP
-        .word   TOR
-        .word   ZEQUAL
-        .word   RFROM
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; 1LINE_nfa
-ONELINE_nfa:
-        .byte   $85
-        .byte   "1LIN"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   MATCH_nfa
-ONELINE:
-        .word   DOCOL
-        .word   DIGLAG
-        .word   PAD
-        .word   COUNT
-        .word   LF4D6
-        .word   RNUM
-        .word   PSTORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-FIND_nfa:
-        .byte   $84
-        .byte   "FIN"
-        .byte   $C4
-; ----------------------------------------------------------------------------
-        .word   ONELINE_nfa
-FIND:
-        .word   DOCOL
-LF545:
-        .word   LIT
-        .word   $03FF
-        .word   RNUM
-        .word   AT
-        .word   LESS
-        .word   ZBRANCH
-        .word   LF563
-        .word   TOP
-        .word   PAD
-        .word   HERE
-        .word   CSLL
-        .word   ONEP
-        .word   CMOVE
-        .word   ZERO
-        .word   ERROR
-LF563:
-        .word   ONELINE
-        .word   ZBRANCH
-        .word   LF545
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-DELETE_nfa:
-        .byte   $86
-        .byte   "DELET"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   FIND_nfa
-DELETE:
-        .word   DOCOL
-        .word   TOR
-        .word   DIGLAG
-        .word   PLUS
-        .word   R
-        .word   SUB
-        .word   DIGLAG
-        .word   R
-        .word   MINUS
-        .word   RNUM
-        .word   PSTORE
-        .word   DIGLEAD
-        .word   PLUS
-        .word   SWAP
-        .word   CMOVE
-        .word   RFROM
-        .word   BLANKS
-        .word   UPDATE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; N vocaublaire EDITOR
-Neditor_nfa:
-        .byte   $81,$CE
-; ----------------------------------------------------------------------------
-        .word   DELETE_nfa
-; N vocaublaire EDITOR
-Neditor:
-        .word   DOCOL
-        .word   FIND
-        .word   ZERO
-        .word   M
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-F_nfa:
-        .byte   $81,$C6
-; ----------------------------------------------------------------------------
-        .word   Neditor_nfa
-        .word   DOCOL
-        .word   ONE
-        .word   TEXT
-        .word   Neditor
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-B_nfa:
-        .byte   $81,$C2
-; ----------------------------------------------------------------------------
-        .word   F_nfa
-        .word   DOCOL
-        .word   PAD
-        .word   CAT
-        .word   MINUS
-        .word   M
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-X_nfa:
-        .byte   $81,$D8
-; ----------------------------------------------------------------------------
-        .word   B_nfa
-        .word   DOCOL
-        .word   ONE
-        .word   TEXT
-        .word   FIND
-        .word   PAD
-        .word   CAT
-        .word   DELETE
-        .word   ZERO
-        .word   M
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-TILL_nfa:
-        .byte   $84
-        .byte   "TIL"
-        .byte   $CC
-; ----------------------------------------------------------------------------
-        .word   X_nfa
-        .word   DOCOL
-        .word   DIGLEAD
-        .word   PLUS
-        .word   ONE
-        .word   TEXT
-        .word   ONELINE
-        .word   ZEQUAL
-        .word   ZERO
-        .word   QERROR
-        .word   DIGLEAD
-        .word   PLUS
-        .word   SWAP
-        .word   SUB
-        .word   DELETE
-        .word   ZERO
-        .word   M
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-C_nfa:
-        .byte   $81,$C3
-; ----------------------------------------------------------------------------
-        .word   TILL_nfa
-        .word   DOCOL
-        .word   ONE
-        .word   TEXT
-        .word   PAD
-        .word   COUNT
-        .word   DIGLAG
-        .word   ROT
-        .word   OVER
-        .word   MIN
-        .word   TOR
-        .word   R
-        .word   RNUM
-        .word   PSTORE
-        .word   R
-        .word   SUB
-        .word   TOR
-        .word   DUP
-        .word   HERE
-        .word   R
-        .word   CMOVE
-        .word   HERE
-        .word   DIGLEAD
-        .word   PLUS
-        .word   RFROM
-        .word   CMOVE
-        .word   RFROM
-        .word   CMOVE
-        .word   UPDATE
-        .word   ZERO
-        .word   M
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-nu_nfa:
-        .byte   $82
-        .byte   "n"
-        .byte   $F5
-; ----------------------------------------------------------------------------
-        .word   C_nfa
-nu:
-        .word   DOCOL
-        .word   TOR
-        .word   LIT
-        .word   $10
-        .word   ZERO
-        .word   PDO
-LF65A:
-        .word   CR
-        .word   I
-        .word   LIT
-        .word   $03
-        .word   DOTR
-        .word   SPACE
-        .word   I
-        .word   OVER
-        .word   EQUAL
-        .word   ZBRANCH
-        .word   LF6A0
-        .word   QUERY
-        .word   ONE
-        .word   TEXT
-        .word   TIB
-        .word   AT
-        .word   CAT
-        .word   ZEQUAL
-        .word   ZBRANCH
-        .word   LF694
-        .word   LIT
-        .word   $08
-        .word   EMIT
-        .word   I
-        .word   SCR
-        .word   AT
-        .word   DOTLINE
-        .word   BRANCH
-        .word   LF69C
-LF694:
-        .word   I
-        .word   J
-        .word   EXECUTE
-        .word   ONEP
-LF69C:
-        .word   BRANCH
-        .word   LF6A8
-LF6A0:
-        .word   I
-        .word   SCR
-        .word   AT
-        .word   DOTLINE
-LF6A8:
-        .word   PLOOP
-        .word   LF65A
-        .word   RFROM
-        .word   TWODROP
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-NEW_nfa:
-        .byte   $83
-        .byte   "NE"
-        .byte   $D7
-; ----------------------------------------------------------------------------
-        .word   nu_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   Reditor
-        .word   nu
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-UNDER_nfa:
-        .byte   $85
-        .byte   "UNDE"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   NEW_nfa
-        .word   DOCOL
-        .word   ONEP
-        .word   LIT
-        .word   LF494
-        .word   nu
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-SCRMOVE_nfa:
-        .byte   $87
-        .byte   "SCRMOV"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   UNDER_nfa
-        .word   DOCOL
-        .word   ABS
-        .word   TOR
-        .word   TWODUP
-        .word   LESS
-        .word   ZBRANCH
-        .word   LF700
-        .word   R
-        .word   ONES
-        .word   DUP
-        .word   DPLUS
-        .word   ZERO
-        .word   RFROM
-        .word   MINUS
-        .word   BRANCH
-        .word   LF704
-LF700:
-        .word   RFROM
-        .word   ZERO
-LF704:
-        .word   PDO
-LF706:
-        .word   TWODUP
-        .word   SWAP
-        .word   BLOCK
-        .word   TWOS
-        .word   STORE
-        .word   UPDATE
-        .word   FLUSH
-        .word   ONE
-        .word   ONE
-        .word   I
-        .word   ZLESS
-        .word   ZBRANCH
-        .word   LF722
-        .word   DMINUS
-LF722:
-        .word   DPLUS
-        .word   PLOOP
-        .word   LF706
-        .word   TWODROP
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-SCRCOPY_nfa:
-        .byte   $87
-        .byte   "SCRCOP"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   SCRMOVE_nfa
-        .word   DOCOL
-        .word   USING
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $03
-        .byte   "de "
-; ----------------------------------------------------------------------------
-        .word   LIT
-        .word   $03
-        .word   PICK
-        .word   DUP
-        .word   DOT
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $02
-        .byte   "a "
-; ----------------------------------------------------------------------------
-        .word   OVER
-        .word   PLUS
-        .word   DOT
-        .word   XFILE
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $04
-        .byte   "vers"
-; ----------------------------------------------------------------------------
-        .word   USING
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $03
-        .byte   "de "
-; ----------------------------------------------------------------------------
-        .word   OVER
-        .word   DUP
-        .word   DOT
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $02
-        .byte   "a "
-; ----------------------------------------------------------------------------
-        .word   OVER
-        .word   PLUS
-        .word   DOT
-        .word   XFILE
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $06
-        .byte   "Copier"
-; ----------------------------------------------------------------------------
-        .word   QOK
-        .word   ZBRANCH
-        .word   LF7AC
-        .word   ZERO
-        .word   PDO
-LF78C:
-        .word   OVER
-        .word   I
-        .word   PLUS
-        .word   BLOCK
-        .word   XFILE
-        .word   OVER
-        .word   I
-        .word   PLUS
-        .word   SWAP
-        .word   TWOS
-        .word   STORE
-        .word   XFILE
-        .word   PLOOP
-        .word   LF78C
-        .word   BRANCH
-        .word   LF7AE
-LF7AC:
-        .word   DROP
-LF7AE:
-        .word   TWODROP
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-LIFE_nfa:
-        .byte   $C4
-        .byte   "LIF"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   WHERE_nfa
-        .word   DODOES
-        .word   DOVOC
-        .word   LIFE_voc
-; VL0
-LIFE_LINK:
-        .word   EDITOR_LINK
-; ----------------------------------------------------------------------------
-DXY_nfa:
-        .byte   $83
-        .byte   "DX"
-        .byte   $D9
-; ----------------------------------------------------------------------------
-        .word   FORTH_voc
-DXY:
-        .word   DOVAR
-        .word   RAM_START+42
-; ----------------------------------------------------------------------------
-NEWm_nfa:
-        .byte   $84
-        .byte   "NEW"
-        .byte   $ED
-; ----------------------------------------------------------------------------
-        .word   DXY_nfa
-NEWm:
-        .word   DOVAR
-        .word   RAM_START+44
-; ----------------------------------------------------------------------------
-OLDm_nfa:
-        .byte   $84
-        .byte   "OLD"
-        .byte   $ED
-; ----------------------------------------------------------------------------
-        .word   NEWm_nfa
-OLDm:
-        .word   DOVAR
-        .word   RAM_START+46
-; ----------------------------------------------------------------------------
-WRKm_nfa:
-        .byte   $84
-        .byte   "WRK"
-        .byte   $ED
-; ----------------------------------------------------------------------------
-        .word   OLDm_nfa
-WRKm:
-        .word   DOVAR
-        .word   RAM_START+48
-; ----------------------------------------------------------------------------
-; org^_nfa
-orgCARET_nfa:
-        .byte   $84
-        .byte   "org"
-        .byte   $DE
-; ----------------------------------------------------------------------------
-        .word   WRKm_nfa
-; org^
-orgCARET:
-        .word   DOVAR
-        .word   RAM_START+50
-; ----------------------------------------------------------------------------
-; mid^_nfa
-midCARET_nfa:
-        .byte   $84
-        .byte   "mid"
-        .byte   $DE
-; ----------------------------------------------------------------------------
-        .word   orgCARET_nfa
-; mid^
-midCARET:
-        .word   DOVAR
-        .word   RAM_START+52
-; ----------------------------------------------------------------------------
-; end^_nfa
-endCARET_nfa:
-        .byte   $84
-        .byte   "end"
-        .byte   $DE
-; ----------------------------------------------------------------------------
-        .word   midCARET_nfa
-; end^
-endCARET:
-        .word   DOVAR
-        .word   RAM_START+54
-; ----------------------------------------------------------------------------
-; C:L_nfa
-CCOLL_nfa:
-        .byte   $83
-        .byte   "C:"
-        .byte   $CC
-; ----------------------------------------------------------------------------
-        .word   endCARET_nfa
-; C:L
-CCOLL:
-        .word   DOCOL
-        .word   QHIRES
-        .word   ZBRANCH
-        .word   LF823
-        .word   LIT
-        .word   $F0
-        .word   BRANCH
-        .word   LF827
-LF823:
-        .word   LIT
-        .word   $28
-LF827:
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; L:C_nfa
-LCOLC_nfa:
-        .byte   $83
-        .byte   "L:"
-        .byte   $C3
-; ----------------------------------------------------------------------------
-        .word   CCOLL_nfa
-; L:C
-LCOLC:
-        .word   DOCOL
-        .word   QHIRES
-        .word   ZBRANCH
-        .word   LF83F
-        .word   LIT
-        .word   IP
-        .word   BRANCH
-        .word   LF843
-LF83F:
-        .word   LIT
-        .word   $1B
-LF843:
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; C*L_nfa
-CSTARL_nfa:
-        .byte   $83
-        .byte   "C*"
-        .byte   $CC
-; ----------------------------------------------------------------------------
-        .word   LCOLC_nfa
-; C*L
-CSTARL:
-        .word   DOCOL
-        .word   QHIRES
-        .word   ZBRANCH
-        .word   LF85B
-        .word   LIT
-        .word   SCRTXT
-        .word   BRANCH
-        .word   LF85F
-LF85B:
-        .word   LIT
-        .word   $0438
-LF85F:
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; m#_nfa
-mDIG_nfa:
-        .byte   $82
-        .byte   "m"
-        .byte   $A3
-; ----------------------------------------------------------------------------
-        .word   CSTARL_nfa
-; m#
-mDIG:
-        .word   DOCOL
-        .word   QHIRES
-        .word   ZBRANCH
-        .word   LF87A
-        .word   LIT
-        .word   $FF0F
-        .word   OVER
-        .word   ULESS
-        .word   BRANCH
-        .word   LF87E
-LF87A:
-        .word   DUP
-        .word   ZLESS
-LF87E:
-        .word   ZBRANCH
-        .word   LF88A
-        .word   CSTARL
-        .word   PLUS
-        .word   BRANCH
-        .word   LF89A
-LF88A:
-        .word   CSTARL
-        .word   ONES
-        .word   OVER
-        .word   ULESS
-        .word   ZBRANCH
-        .word   LF89A
-        .word   CSTARL
-        .word   SUB
-LF89A:
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-TOKEN_nfa:
-        .byte   $85
-        .byte   "TOKE"
-        .byte   $CE
-; ----------------------------------------------------------------------------
-        .word   mDIG_nfa
-TOKEN:
-        .word   DOCON
-; ----------------------------------------------------------------------------
-        .word   $006F
-; ----------------------------------------------------------------------------
-TXTORG_nfa:
-        .byte   $86
-        .byte   "TXTOR"
-        .byte   $C7
-; ----------------------------------------------------------------------------
-        .word   TOKEN_nfa
-TXTORG:
-        .word   DOCON
-; ----------------------------------------------------------------------------
-        .word   $BBA8
-; ----------------------------------------------------------------------------
-PAINT_nfa:
-        .byte   $85
-        .byte   "PAIN"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   TXTORG_nfa
-PAINT:
-        .word   DOCOL
-        .word   QHIRES
-        .word   ZBRANCH
-        .word   LF8D3
-        .word   FB
-        .word   ZERO
-        .word   CCOLL
-        .word   USL
-        .word   CURSET
-        .word   BRANCH
-        .word   LF8E7
-LF8D3:
-        .word   ZBRANCH
-        .word   LF8DD
-        .word   TOKEN
-        .word   BRANCH
-        .word   LF8DF
-LF8DD:
-        .word   BL
-LF8DF:
-        .word   SWAP
-        .word   TXTORG
-        .word   PLUS
-        .word   CSTORE
-LF8E7:
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; .CURSOR_nfa
-DOTCURSOR_nfa:
-        .byte   $87
-        .byte   ".CURSO"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   PAINT_nfa
-; .CURSOR
-DOTCURSOR:
-        .word   DOCOL
-        .word   RNUM
-        .word   AT
-        .word   mDIG
-        .word   DUP
-        .word   RNUM
-        .word   STORE
-        .word   DUP
-        .word   NEWm
-        .word   mAT
-LF907:
-        .word   TWODUP
-        .word   ZEQUAL
-        .word   PAINT
-        .word   ONE
-        .word   TWO
-        .word   WAIT
-        .word   TWODUP
-        .word   PAINT
-        .word   TWO
-        .word   TWO
-        .word   WAIT
-        .word   QTERMINAL
-        .word   ZBRANCH
-        .word   LF907
-        .word   TWODROP
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; .GENE_nfa
-DOTGENE_nfa:
-        .byte   $85
-        .byte   ".GEN"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   DOTCURSOR_nfa
-; .GENE
-DOTGENE:
-        .word   DOCOL
-        .word   ZERO
-        .word   ZERO
-        .word   GOTOXY
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $05
-        .byte   "Gene "
-; ----------------------------------------------------------------------------
-        .word   DOT
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $02
-        .byte   ": "
-; ----------------------------------------------------------------------------
-        .word   midCARET
-        .word   AT
-        .word   orgCARET
-        .word   AT
-        .word   SUB
-        .word   TWOSL
-        .word   DOT
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $02
-        .byte   "/ "
-; ----------------------------------------------------------------------------
-        .word   endCARET
-        .word   AT
-        .word   orgCARET
-        .word   AT
-        .word   SUB
-        .word   TWOSL
-        .word   DOT
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; .mLEN_nfa
-DOTmLEN_nfa:
-        .byte   $84
-        .byte   "mLE"
-        .byte   $CE
-; ----------------------------------------------------------------------------
-        .word   DOTGENE_nfa
-; .mLEN
-DOTmLET:
-        .word   DOCOL
-        .word   CCOLL
-        .word   LCOLC
-        .word   LIT
-        .word   $08
-        .word   STARSL
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; m,_nfa
-mCOMMA_nfa:
-        .byte   $82
-        .byte   "m"
-        .byte   $AC
-; ----------------------------------------------------------------------------
-        .word   DOTmLEN_nfa
-; m,
-mCOMMA:
-        .word   DOCOL
-        .word   HERE
-        .word   DUP
-        .word   ROT
-        .word   STORE
-        .word   DOTmLET
-        .word   DUP
-        .word   ALLOT
-        .word   ERASE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; m@_nfa
-mAT_nfa:
-        .byte   $82
-        .byte   "m"
-        .byte   $C0
-; ----------------------------------------------------------------------------
-        .word   mCOMMA_nfa
-; m@
-mAT:
-        .word   DOCOL
-        .word   AT
-        .word   SWAP
-        .word   BMAP
-        .word   CTST
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; m!_nfa
-mSTORE_nfa:
-        .byte   $82
-        .byte   "m"
-        .byte   $A1
-; ----------------------------------------------------------------------------
-        .word   mAT_nfa
-; m!
-mSTORE:
-        .word   DOCOL
-        .word   AT
-        .word   SWAP
-        .word   BMAP
-        .word   TOGGLE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; ^,_nfa : !!! REMPLACER .byte ''^'' par .byte $5E sinon XA insère la chaine et tout ce qui qui la suit sans le ^
-CARETCOMMA_nfa:
-        .byte   $82
-        .byte   $5E
-        .byte   $AC
-; ----------------------------------------------------------------------------
-        .word   mSTORE_nfa
-; ^,
-CARETCOMMA:
-        .word   DOCOL
-        .word   DUPTOR
-        .word   AT
-        .word   STORE
-        .word   TWO
-        .word   RFROM
-        .word   PSTORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-around_nfa:
-        .byte   $86
-        .byte   "aroun"
-        .byte   $E4
-; ----------------------------------------------------------------------------
-        .word   CARETCOMMA_nfa
-around:
-        .word   DOCOL
-        .word   ZERO
-        .word   DXY
-        .word   AT
-        .word   DUP
-        .word   LIT
-        .word   $10
-        .word   PLUS
-        .word   SWAP
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-INI_nfa:
-        .byte   $83
-        .byte   "IN"
-        .byte   $C9
-; ----------------------------------------------------------------------------
-        .word   around_nfa
-INI:
-        .word   DOCOL
-        .word   HERE
-        .word   PAD
-        .word   DP
-        .word   STORE
-        .word   NEWm
-        .word   mCOMMA
-        .word   OLDm
-        .word   mCOMMA
-        .word   WRKm
-        .word   mCOMMA
-        .word   HERE
-        .word   DXY
-        .word   STORE
-        .word   LIT
-        .word   $FFFF
-        .word   COMMA
-        .word   ONE
-        .word   COMMA
-        .word   CCOLL
-        .word   DUP
-        .word   DUP
-        .word   MINUS
-        .word   COMMA
-        .word   COMMA
-        .word   DUP
-        .word   ONES
-        .word   DUP
-        .word   MINUS
-        .word   COMMA
-        .word   COMMA
-        .word   ONEP
-        .word   DUP
-        .word   MINUS
-        .word   COMMA
-        .word   COMMA
-        .word   HERE
-        .word   DUP
-        .word   orgCARET
-        .word   STORE
-        .word   midCARET
-        .word   STORE
-        .word   LCOLC
-        .word   TWOSL
-        .word   CCOLL
-        .word   STAR
-        .word   CCOLL
-        .word   TWOSL
-        .word   PLUS
-        .word   RNUM
-        .word   STORE
-        .word   DP
-        .word   STORE
-        .word   QHIRES
-        .word   ZBRANCH
-        .word   LFA67
-        .word   HIRES
-        .word   BRANCH
-        .word   LFA69
-LFA67:
-        .word   CLS
-LFA69:
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-QFN_nfa:
-        .byte   $83
-        .byte   "QF"
-        .byte   $CE
-; ----------------------------------------------------------------------------
-        .word   INI_nfa
-QFN:
-        .word   DOCOL
-        .word   ZERO
-        .word   ZERO
-        .word   GOTOXY
-        .word   LIT
-        .word   $28
-        .word   SPACES
-        .word   ZERO
-        .word   ZERO
-        .word   GOTOXY
-        .word   ZBRANCH
-        .word   LFA95
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $05
-        .byte   "Load:"
-; ----------------------------------------------------------------------------
-        .word   BRANCH
-        .word   LFA9D
-LFA95:
-        .word   PDOTQ
-; ----------------------------------------------------------------------------
-        .byte   $05
-        .byte   "Save:"
-; ----------------------------------------------------------------------------
-LFA9D:
-        .word   BLK
-        .word   AT
-        .word   TOR
-        .word   IN
-        .word   AT
-        .word   TOR
-        .word   ZERO
-        .word   BLK
-        .word   STORE
-        .word   QUERY
-        .word   BL
-        .word   WORD
-        .word   HERE
-        .word   FILENAME
-        .word   RFROM
-        .word   IN
-        .word   STORE
-        .word   RFROM
-        .word   BLK
-        .word   STORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-GENE_nfa:
-        .byte   $84
-        .byte   "GEN"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   QFN_nfa
-GENE:
-        .word   DOCOL
-        .word   NEWm
-        .word   AT
-        .word   DOTmLET
-        .word   TWODUP
-        .word   OLDm
-        .word   AT
-        .word   SWAP
-        .word   CMOVE
-        .word   WRKm
-        .word   AT
-        .word   SWAP
-        .word   CMOVE
-        .word   midCARET
-        .word   AT
-        .word   DUP
-        .word   DUP
-        .word   endCARET
-        .word   STORE
-        .word   orgCARET
-        .word   AT
-        .word   DUP
-        .word   midCARET
-        .word   STORE
-        .word   PDO
-LFB00:
-        .word   I
-        .word   AT
-        .word   around
-        .word   PDO
-LFB08:
-        .word   OVER
-        .word   I
-        .word   AT
-        .word   PLUS
-        .word   mDIG
-        .word   DUPTOR
-        .word   OLDm
-        .word   mAT
-        .word   ZBRANCH
-        .word   LFB22
-        .word   ONEP
-        .word   BRANCH
-        .word   LFB3A
-LFB22:
-        .word   R
-        .word   WRKm
-        .word   mAT
-        .word   ZEQUAL
-        .word   ZBRANCH
-        .word   LFB3A
-        .word   R
-        .word   WRKm
-        .word   mSTORE
-        .word   R
-        .word   endCARET
-        .word   CARETCOMMA
-LFB3A:
-        .word   RFROMDROP
-        .word   TWO
-        .word   PPLOOP
-        .word   LFB08
-        .word   LIT
-        .word   $0E
-        .word   ANDforth
-        .word   TWO
-        .word   EQUAL
-        .word   ZBRANCH
-        .word   LFB58
-        .word   midCARET
-        .word   CARETCOMMA
-        .word   BRANCH
-        .word   LFB62
-LFB58:
-        .word   DUP
-        .word   ZERO
-        .word   PAINT
-        .word   NEWm
-        .word   mSTORE
-LFB62:
-        .word   TWO
-        .word   PPLOOP
-        .word   LFB00
-        .word   endCARET
-        .word   AT
-        .word   SWAP
-        .word   PDO
-LFB70:
-        .word   I
-        .word   AT
-        .word   around
-        .word   PDO
-LFB78:
-        .word   OVER
-        .word   I
-        .word   AT
-        .word   PLUS
-        .word   mDIG
-        .word   OLDm
-        .word   mAT
-        .word   PLUS
-        .word   TWO
-        .word   PPLOOP
-        .word   LFB78
-        .word   LIT
-        .word   $03
-        .word   EQUAL
-        .word   ZBRANCH
-        .word   LFBAA
-        .word   DUP
-        .word   midCARET
-        .word   CARETCOMMA
-        .word   DUP
-        .word   ONE
-        .word   PAINT
-        .word   DUP
-        .word   NEWm
-        .word   mSTORE
-LFBAA:
-        .word   DROP
-        .word   TWO
-        .word   PPLOOP
-        .word   LFB70
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-DEMO_nfa:
-        .byte   $84
-        .byte   "DEM"
-        .byte   $CF
-; ----------------------------------------------------------------------------
-        .word   LIFE_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $49
-LFBC1:
-        .word   LIT
-        .word   $49
-        .word   POF
-        .word   LFBCF
-        .word   INI
-        .word   BRANCH
-        .word   LFD37
-LFBCF:
-        .word   LIT
-        .word   $08
-        .word   POF
-        .word   LFBE3
-        .word   LIT
-        .word   $FFFF
-        .word   RNUM
-        .word   PSTORE
-        .word   BRANCH
-        .word   LFD37
-LFBE3:
-        .word   LIT
-        .word   $09
-        .word   POF
-        .word   LFBF5
-        .word   ONE
-        .word   RNUM
-        .word   PSTORE
-        .word   BRANCH
-        .word   LFD37
-LFBF5:
-        .word   LIT
-        .word   $0A
-        .word   POF
-        .word   LFC07
-        .word   CCOLL
-        .word   RNUM
-        .word   PSTORE
-        .word   BRANCH
-        .word   LFD37
-LFC07:
-        .word   LIT
-        .word   $0B
-        .word   POF
-        .word   LFC1B
-        .word   CCOLL
-        .word   MINUS
-        .word   RNUM
-        .word   PSTORE
-        .word   BRANCH
-        .word   LFD37
-LFC1B:
-        .word   BL
-        .word   POF
-        .word   LFC77
-        .word   RNUM
-        .word   AT
-        .word   DUP
-        .word   NEWm
-        .word   mSTORE
-        .word   DUP
-        .word   NEWm
-        .word   mAT
-        .word   TWODUP
-        .word   PAINT
-        .word   ZBRANCH
-        .word   LFC41
-        .word   midCARET
-        .word   CARETCOMMA
-        .word   BRANCH
-        .word   LFC73
-LFC41:
-        .word   midCARET
-        .word   AT
-        .word   orgCARET
-        .word   AT
-        .word   PDO
-LFC4B:
-        .word   DUP
-        .word   I
-        .word   AT
-        .word   EQUAL
-        .word   ZBRANCH
-        .word   LFC6B
-        .word   LIT
-        .word   $FFFE
-        .word   midCARET
-        .word   PSTORE
-        .word   midCARET
-        .word   AT
-        .word   AT
-        .word   I
-        .word   STORE
-        .word   LEAVE
-LFC6B:
-        .word   TWO
-        .word   PPLOOP
-        .word   LFC4B
-        .word   DROP
-LFC73:
-        .word   BRANCH
-        .word   LFD37
-LFC77:
-        .word   LIT
-        .word   $0D
-        .word   POF
-        .word   LFCA7
-        .word   ZERO
-LFC81:
-        .word   orgCARET
-        .word   AT
-        .word   midCARET
-        .word   AT
-        .word   EQUAL
-        .word   QTERMSTOP
-        .word   OR
-        .word   ZEQUAL
-        .word   ZBRANCH
-        .word   LFCA1
-        .word   GENE
-        .word   ONEP
-        .word   DUP
-        .word   DOTGENE
-        .word   BRANCH
-        .word   LFC81
-LFCA1:
-        .word   DROP
-        .word   BRANCH
-        .word   LFD37
-LFCA7:
-        .word   LIT
-        .word   $53
-        .word   POF
-        .word   LFCC3
-        .word   ZERO
-        .word   QFN
-        .word   orgCARET
-        .word   AT
-        .word   midCARET
-        .word   AT
-        .word   ONES
-        .word   DOLSAVE
-        .word   BRANCH
-        .word   LFD37
-LFCC3:
-        .word   LIT
-        .word   $4C
-        .word   POF
-        .word   LFD21
-        .word   RNUM
-        .word   AT
-        .word   CCOLL
-        .word   LCOLC
-        .word   TWO
-        .word   STARSL
-        .word   SUB
-        .word   ONE
-        .word   QFN
-        .word   midCARET
-        .word   AT
-        .word   DUP
-        .word   DOLLOAD
-        .word   ONEP
-        .word   SWAP
-        .word   PDO
-LFCEB:
-        .word   DUP
-        .word   I
-        .word   AT
-        .word   PLUS
-        .word   mDIG
-        .word   DUP
-        .word   NEWm
-        .word   mAT
-        .word   ZBRANCH
-        .word   LFD05
-        .word   DROP
-        .word   BRANCH
-        .word   LFD15
-LFD05:
-        .word   DUP
-        .word   midCARET
-        .word   CARETCOMMA
-        .word   DUP
-        .word   NEWm
-        .word   mSTORE
-        .word   ONE
-        .word   PAINT
-LFD15:
-        .word   TWO
-        .word   PPLOOP
-        .word   LFCEB
-        .word   DROP
-        .word   BRANCH
-        .word   LFD37
-LFD21:
-        .word   LIT
-        .word   $03
-        .word   POF
-        .word   LFD2F
-        .word   SEMIS
-        .word   BRANCH
-        .word   LFD37
-LFD2F:
-        .word   LIT
-        .word   $07
-        .word   EMIT
-        .word   DROP
-LFD37:
-        .word   DOTCURSOR
-        .word   KEY
-        .word   BRANCH
-        .word   LFBC1
-        .word   SEMIS
-; ----------------------------------------------------------------------------
+
+-last_forth_word_nfa = LINE_nfa
+#endif
+
+; ----------------------------------------------------------------------------
+; Vocabulaire EDITOR
+#ifdef WITH_EDITOR_VOC
+#include "Editor.voc"
+#endif
+
+; ----------------------------------------------------------------------------
+; Vocabulaire LIFE
+#ifdef WITH_LIFE_VOC
+#include "Life.voc"
+#endif
+
+; ----------------------------------------------------------------------------
+#ifdef WITH_ROMend
+#echo "Ajout du mot ROMend"
 ROMend_nfa:
         .byte   $86
         .byte   "ROMen"
         .byte   $E4
 ; ----------------------------------------------------------------------------
-        .word   DEMO_nfa
+;        .word   DEMO_nfa
+        .word last_forth_word_nfa
 ROMend:
         .word   INIT_RAM
         .word   SEMIS
+
+-last_forth_word_nfa = ROMend_nfa
+#endif
+
+; ----------------------------------------------------------------------------
+; Vocabulaire CH376
+; ----------------------------------------------------------------------------
+#ifdef WITH_CH376
+#include "CH376.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
 ; Taille de la table d'init du dictionnaire en RAM (copiée en $1404 par COLD)
@@ -10516,73 +6955,93 @@ NUMBER_defer = RAM_START-2+(*-DictInitTable)
 ; +04 -> defer de PROMPT
 PROMPT_defer = RAM_START-2+(*-DictInitTable)
         .word   OK
+
 ; ----------------------------------------------------------------------------
 ; +06 -> Pour le vocabulaire FORTH
 FORTH_voc = RAM_START-2+(*-DictInitTable)
         .byte   $81,$A0
-        .word   ROMend_nfa
+        .word   last_forth_word_nfa
 
 ; ----------------------------------------------------------------------------
 ; +10 -> defer de QTERMINAL (initialisé à QTERM par TERMINAL)
 QTERMINAL_defer = RAM_START-2+(*-DictInitTable)
-        .word   LC05C
+        .word   NOOP
 
 ; ----------------------------------------------------------------------------
 ; +12 -> defer de KEY (initialisé à CKEY par TERMINAL)
 KEY_defer = RAM_START-2+(*-DictInitTable)
-        .word   LC05C
+        .word   NOOP
 
 ; ----------------------------------------------------------------------------
 ; +14 -> defer de EMIT (initialisé à CEMIT par TERMINAL)
 EMIT_defer = RAM_START-2+(*-DictInitTable)
-        .word   LC05C
+        .word   NOOP
 
 ; ----------------------------------------------------------------------------
 ; +16 -> Pour le vocabulaire SOUNDS
-SOUNDS_voc = RAM_START-2+(*-DictInitTable)
-        .byte   $81,$A0
-        .word   PING_nfa
+#ifdef WITH_SOUNDS_VOC
+#include "Sounds.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
 ; +20 -> Pour le vocabulaire GRAFX
-GRAFX_voc = RAM_START-2+(*-DictInitTable)
-        .byte   $81,$A0
-        .word   CHARCOL_nfa
+#ifdef WITH_GRAFX_VOC
+#include "Grafx.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
 ; +24 -> Pour le vocabulaire WINDOWS
-WINDOWS_voc = RAM_START-2+(*-DictInitTable)
-        .byte   $81,$A0
-        .word   SCROLL_nfa
+#ifdef WITH_WINDOWS_VOC
+#include "Windows.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
 ; +28 -> Pour le vocabulaire IOS
-IOS_voc = RAM_START-2+(*-DictInitTable)
-        .byte   $81,$A0
-        .word   PAGE_nfa
-
+#ifdef WITH_IOS_VOC
+#include "IOS_minimal.voc"
+;
 ; ----------------------------------------------------------------------------
+#ifdef WITH_IOSext_VOC
+#include "IOS_extended.voc"
 ; +32 -> defer de MINITEL
-MINITEL_defer = RAM_START-2+(*-DictInitTable)
-        .word   LC05C
+#endif
+#endif
 
 ; ----------------------------------------------------------------------------
 ; +34 -> Pour le vocabulaire EDITOR
-EDITOR_voc = RAM_START-2+(*-DictInitTable)
-        .byte   $81,$A0
-        .word   SCRCOPY_nfa
+#ifdef WITH_EDITOR_VOC
+#include "Editor.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
 ; +38 -> Pour le vocabulaire LIFE
-LIFE_voc = RAM_START-2+(*-DictInitTable)
-        .byte   $81,$A0
-        .word   GENE_nfa
+#ifdef WITH_LIFE_VOC
+#include "Life.voc"
+#endif
 
 ; ----------------------------------------------------------------------------
         .byte   $00,$00,$00,$00,$00,$00,$00,$00
         .byte   $00,$00,$00,$00,$00,$00
+
+#ifdef WITH_CH376
+#include "CH376.voc"
+#endif
+
 DictInitTableEnd:
 
+
+; ----------------------------------------------------------------------------
+#echo Fin:
+#print *
+#echo Utilise:
+#print * - ORIGIN
+#echo Octets libres:
+#print $fff8-*
+
+#if * > $fff8
+#echo "Erreur fichier trop long"
+#print _err_
+#endif
  .dsb $fff8-*,$00
 
 ; ----------------------------------------------------------------------------

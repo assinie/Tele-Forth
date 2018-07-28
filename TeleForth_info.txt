@@ -238,7 +238,8 @@ label { addr  $c0b3; name "SETUP";  comment "Copie ACC mots de la pile vers N"; 
 
 range { start $c055; end $c059; type texttable; name "NOOP_nfa"; };
 range { start $c05a; end $c05d; type addrtable; };
-label { addr  $c05e; size    4; name "NEXT"; };  # Pour avoir des JMP NEXT+2
+label { addr  $c05c;            name "NOOP"; }; # Utilisé pour les xxx_defer
+label { addr  $c05e; size    4; name "NEXT"; }; # Pour avoir des JMP NEXT+2
 range { start $c05e; end $c074; type code; };
 
 range { start $c077; end $c07e; type texttable; name "EXECUTE_nfa"; };
@@ -450,7 +451,7 @@ range { start $c5f7; end $c5fc; type addrtable; };
 range { start $c5fd; end $c5fe; type texttable; name "GREAT_nfa";     comment ">_nfa"; };
 range { start $c5ff; end $c602; type addrtable; };
 label { addr  $c601;                            name "GREAT";         comment ">"; };
-range { start $c603; end $c606; type addrtable; };
+range { start $c603; end $c608; type addrtable; };
 
 range { start $c609; end $c60a; type texttable; name "SUB_nfa";       comment "-_nfa"; };
 range { start $c60b; end $c60e; type addrtable; };

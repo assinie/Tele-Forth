@@ -1,0 +1,462 @@
+; ----------------------------------------------------------------------------
+; Extensions du vocabulaire IOS
+
+#ifdef WITH_IOSext_VOC
+;#echo "Ajout des extensions IOS"
+
+#ifdef IOS_EXTENDED_INC
+
+#ifldef MINITEL
+#echo "Ajout defer MINITEL"
+
+MINITEL_defer = RAM_START-2+(*-DictInitTable)
+        .word   NOOP
+
+#endif
+
+#else
+#define IOS_EXTENDED_INC
+
+#ifdef WITH_IOS_PRINTER
+#echo "Ajout des extensions IOS/Imprimante"
+
+; Appel Telemon XTSTLP ($1E)
+TSTLP_nfa:
+        .byte   $85
+        .byte   "TSTL"
+        .byte   $D0
+; ----------------------------------------------------------------------------
+        .word   CEMIT_nfa
+        .word   DOMON
+; ----------------------------------------------------------------------------
+        .byte   XTSTLP
+; ----------------------------------------------------------------------------
+; Appel Telemon XHCVDT ($4B)
+VCOPY_nfa:
+        .byte   $85
+        .byte   "VCOP"
+        .byte   $D9
+; ----------------------------------------------------------------------------
+        .word   TSTLP_nfa
+        .word   DOMON
+; ----------------------------------------------------------------------------
+        .byte   XHCVDT
+; ----------------------------------------------------------------------------
+; Appel Telemon XHCHRS ($4C)
+HCOPY_nfa:
+        .byte   $85
+        .byte   "HCOP"
+        .byte   $D9
+; ----------------------------------------------------------------------------
+        .word   VCOPY_nfa
+        .word   DOMON
+; ----------------------------------------------------------------------------
+        .byte   $4C
+; ----------------------------------------------------------------------------
+; Appel Telemon XHCSCR ($4A)
+WCOPY_nfa:
+        .byte   $85
+        .byte   "WCOP"
+        .byte   $D9
+; ----------------------------------------------------------------------------
+        .word   HCOPY_nfa
+        .word   DOCOL
+        .word   LIT
+        .word   SCRNB
+        .word   CSTORE
+        .word   LIT
+        .word   XHCSCR
+        .word   MON
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+PEMIT_nfa:
+        .byte   $85
+        .byte   "PEMI"
+        .byte   $D4
+; ----------------------------------------------------------------------------
+        .word   WCOPY_nfa
+        .word   DOCOL
+        .word   AYX
+        .word   CSTORE
+        .word   LIT
+        .word   XLPRBI
+        .word   MON
+        .word   SEMIS
+
+-last_ios_word_nfa = PEMIT_nfa
+#endif
+
+; ----------------------------------------------------------------------------
+#ifdef WITH_IOS_SERIAL
+#echo "Ajout des extensions IOS/Serie"
+; ----------------------------------------------------------------------------
+; Appel Telemon XSDUMP ($5C)
+SDUMP_nfa:
+        .byte   $85
+        .byte   "SDUM"
+        .byte   $D0
+; ----------------------------------------------------------------------------
+        .word   PEMIT_nfa
+        .word   DOMON
+; ----------------------------------------------------------------------------
+        .byte   XSDUMP
+; ----------------------------------------------------------------------------
+; Appel Telemon XCONSO ($5D)
+CONSOLE_nfa:
+        .byte   $87
+        .byte   "CONSOL"
+        .byte   $C5
+; ----------------------------------------------------------------------------
+        .word   SDUMP_nfa
+        .word   DOMON
+; ----------------------------------------------------------------------------
+        .byte   XCONSO
+; ----------------------------------------------------------------------------
+SLOAD_nfa:
+        .byte   $85
+        .byte   "SLOA"
+        .byte   $C4
+; ----------------------------------------------------------------------------
+        .word   CONSOLE_nfa
+        .word   DOCOL
+        .word   PIO
+        .word   ONE
+        .word   CRST
+        .word   LIT
+        .word   XSLOAD
+        .word   MON
+        .word   LIT
+        .word   desalo
+        .word   AT
+        .word   LIT
+        .word   fisalo
+        .word   AT
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+SLOADA_nfa:
+        .byte   $86
+        .byte   "SLOAD"
+        .byte   $C1
+; ----------------------------------------------------------------------------
+        .word   SLOAD_nfa
+        .word   DOCOL
+        .word   PIO
+        .word   ONE
+        .word   CSET
+        .word   LIT
+        .word   desalo
+        .word   STORE
+        .word   LIT
+        .word   XSLOAD
+        .word   MON
+        .word   LIT
+        .word   fisalo
+        .word   AT
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+SSAVE_nfa:
+        .byte   $85
+        .byte   "SSAV"
+        .byte   $C5
+; ----------------------------------------------------------------------------
+        .word   SLOADA_nfa
+        .word   DOCOL
+        .word   ZERO
+        .word   SALOSTORE
+        .word   LIT
+        .word   XSSAVE
+        .word   MON
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+SEMIT_nfa:
+        .byte   $85
+        .byte   "SEMI"
+        .byte   $D4
+; ----------------------------------------------------------------------------
+        .word   SSAVE_nfa
+        .word   DOCOL
+        .word   AYX
+        .word   CSTORE
+        .word   LIT
+        .word   XSOUT
+        .word   MON
+        .word   SEMIS
+
+-last_ios_word_nfa = SEMIT_nfa
+#endif
+
+; ----------------------------------------------------------------------------
+#ifdef WITH_IOS_MINITEL
+#echo "Ajout des extensions IOS/Minitel"
+
+; last_ios_word_nfa = SEMIT_nfa
+
+; Appel Telemon XRING ($62)
+RING_nfa:
+        .byte   $84
+        .byte   "RIN"
+        .byte   $C7
+; ----------------------------------------------------------------------------
+        .word   last_ios_word_nfa
+        .word   DOMON
+; ----------------------------------------------------------------------------
+        .byte   XRING
+; ----------------------------------------------------------------------------
+; Appel Telemon XWCXFI ($63)
+WCXFI_nfa:
+        .byte   $85
+        .byte   "WCXF"
+        .byte   $C9
+; ----------------------------------------------------------------------------
+        .word   RING_nfa
+        .word   DOMON
+; ----------------------------------------------------------------------------
+        .byte   XWCXFI
+; ----------------------------------------------------------------------------
+; Appel Telemon XLIGNE ($64)
+LIGNE_nfa:
+        .byte   $85
+        .byte   "LIGN"
+        .byte   $C5
+; ----------------------------------------------------------------------------
+        .word   WCXFI_nfa
+        .word   DOMON
+; ----------------------------------------------------------------------------
+        .byte   XLIGNE
+; ----------------------------------------------------------------------------
+; Appel Telemon XDECON ($65)
+DECON_nfa:
+        .byte   $85
+        .byte   "DECO"
+        .byte   $CE
+; ----------------------------------------------------------------------------
+        .word   LIGNE_nfa
+        .word   DOMON
+; ----------------------------------------------------------------------------
+        .byte   XDECON
+; ----------------------------------------------------------------------------
+MLOAD_nfa:
+        .byte   $85
+        .byte   "MLOA"
+        .byte   $C4
+; ----------------------------------------------------------------------------
+        .word   DECON_nfa
+        .word   DOCOL
+        .word   PIO
+        .word   ONE
+        .word   CRST
+        .word   LIT
+        .word   XMLOAD
+        .word   MON
+        .word   LIT
+        .word   desalo
+        .word   AT
+        .word   LIT
+        .word   fisalo
+        .word   AT
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+MLOADA_nfa:
+        .byte   $86
+        .byte   "MLOAD"
+        .byte   $C1
+; ----------------------------------------------------------------------------
+        .word   MLOAD_nfa
+        .word   DOCOL
+        .word   PIO
+        .word   ONE
+        .word   CSET
+        .word   LIT
+        .word   desalo
+        .word   STORE
+        .word   LIT
+        .word   XMLOAD
+        .word   MON
+        .word   LIT
+        .word   fisalo
+        .word   AT
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+MSAVE_nfa:
+        .byte   $85
+        .byte   "MSAV"
+        .byte   $C5
+; ----------------------------------------------------------------------------
+        .word   MLOADA_nfa
+        .word   DOCOL
+        .word   ZERO
+        .word   SALOSTORE
+        .word   LIT
+        .word   XMSAVE
+        .word   MON
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+MEMIT_nfa:
+        .byte   $85
+        .byte   "MEMI"
+        .byte   $D4
+; ----------------------------------------------------------------------------
+        .word   MSAVE_nfa
+        .word   DOCOL
+        .word   AYX
+        .word   CSTORE
+        .word   LIT
+        .word   XMOUT
+        .word   MON
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+MNTL_nfa:
+        .byte   $84
+        .byte   "MNT"
+        .byte   $CC
+; ----------------------------------------------------------------------------
+        .word   MEMIT_nfa
+MNTL:
+        .word   LF1D1
+; ----------------------------------------------------------------------------
+LF1D1:
+        lda     #$03
+        sta     bnkcib
+        lda     BOT,x
+        sta     vexbnk+1
+        dey
+        sty     vexbnk+2
+        stx     _XSAVE
+        lda     AYX_addr
+        ldy     AYX_addr+1
+        ldx     AYX_addr+2
+        lsr     PIO_addr
+        jsr     Exbnk
+        sta     AYX_addr
+        sty     AYX_addr+1
+        stx     AYX_addr+2
+        php
+        pla
+        sta     PIO_addr
+        ldx     _XSAVE
+        jmp     POP
+
+; ----------------------------------------------------------------------------
+MINITEL_nfa:
+        .byte   $87
+        .byte   "MINITE"
+        .byte   $CC
+; ----------------------------------------------------------------------------
+        .word   MNTL_nfa
+MINITEL:
+        .word   DODEFER
+        .word   MINITEL_defer
+
+; ----------------------------------------------------------------------------
+MNTL0:
+        .word   MINITEL
+; ----------------------------------------------------------------------------
+        .word   $F215,$F217
+; ----------------------------------------------------------------------------
+        rts
+
+; ----------------------------------------------------------------------------
+MNTL1:
+        ldx     _XSAVE
+        lda     #>MNTL0
+        sta     IP+1
+        lda     #<MNTL0
+        sta     IP
+        jmp     NEXT
+
+; ----------------------------------------------------------------------------
+SERVEUR_nfa:
+        .byte   $87
+        .byte   "SERVEU"
+        .byte   $D2
+; ----------------------------------------------------------------------------
+        .word   MINITEL_nfa
+        .word   DOCOL
+        .word   LIT
+        .word   v2dra
+        .word   CAT
+        .word   LIT
+        .word   $07
+        .word   ANDforth
+        .word   LIT
+        .word   vaplic
+        .word   CSTORE
+        .word   LIT
+        .word   MNTL1
+        .word   LIT
+        .word   vaplic+1
+        .word   STORE
+        .word   AYX
+        .word   TWOP
+        .word   CSTORE
+        .word   LIT
+        .word   $C5
+        .word   MNTL
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+APLIC_nfa:
+        .byte   $85
+        .byte   "APLI"
+        .byte   $C3
+; ----------------------------------------------------------------------------
+        .word   SERVEUR_nfa
+        .word   DOCOL
+        .word   LIT
+        .word   hrs1
+        .word   STORE
+        .word   LIT
+        .word   $BF
+        .word   MNTL
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+TINPUT_nfa:
+        .byte   $86
+        .byte   "TINPU"
+        .byte   $D4
+; ----------------------------------------------------------------------------
+        .word   APLIC_nfa
+        .word   DOCOL
+        .word   LIT
+        .word   $60
+        .word   CSTORE
+        .word   LIT
+        .word   $BC
+        .word   MNTL
+        .word   LIT
+        .word   $61
+        .word   AT
+        .word   LIT
+        .word   $FF
+        .word   CAT
+        .word   SEMIS
+
+; ----------------------------------------------------------------------------
+PAGE_nfa:
+        .byte   $84
+        .byte   "PAG"
+        .byte   $C5
+; ----------------------------------------------------------------------------
+        .word   TINPUT_nfa
+        .word   DOCOL
+        .word   LIT
+        .word   RAM_START+35005
+        .word   LIT
+        .word   $07
+        .word   DTRAILING
+        .word   HERE
+        .word   CSTORE
+        .word   HERE
+        .word   COUNT
+        .word   CMOVE
+        .word   HERE
+        .word   SEMIS
+
+-last_ios_word_nfa = PAGE_nfa
+; WITH_IOS_MINITEL
+#endif
+
+;#ifdef IOS_EXTENDED_INC
+#endif
+
+; #ifdef WITH_IOSext_VOC
+#endif

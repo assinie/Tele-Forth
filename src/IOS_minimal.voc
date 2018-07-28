@@ -1,0 +1,199 @@
+; ----------------------------------------------------------------------------
+; Vocabulaire IOS (minimal)
+
+#ifdef WITH_IOS_VOC
+
+#ifldef IOS_LINK
+#echo "Ajout entête du vocabulaire IOS"
+IOS_voc = RAM_START-2+(*-DictInitTable)
+        .byte   $81,$A0
+        .word   last_ios_word_nfa
+
+#else
+#echo "Ajout du vocabulaire IOS"
+
+;-PREV_VOC_LINK = last_voc_link
+;-last_voc_link = IOS_LINK
+
+; last_forth_word_nfa = SEMICODE_nfa
+
+IOS_nfa:
+        .byte   $C3
+        .byte   "IO"
+        .byte   $D3
+; ----------------------------------------------------------------------------
+        .word   last_forth_word_nfa
+        .word   DODOES
+        .word   DOVOC
+        .word   IOS_voc
+IOS_LINK:
+;        .word   WINDOWS_LINK
+        .word   last_voc_link
+
+-last_voc_link = IOS_LINK
+-last_forth_word_nfa = IOS_nfa
+
+; ----------------------------------------------------------------------------
+OPCH_nfa:
+        .byte   $84
+        .byte   "OPC"
+        .byte   $C8
+; ----------------------------------------------------------------------------
+        .word   FORTH_voc
+OPCH:
+        .word   DOCOL
+        .word   LIT
+        .word   $80
+        .word   OR
+        .word   AYX
+        .word   CSTORE
+        .word   LIT
+        .word   $03
+        .word   ANDforth
+        .word   MON
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+CLCH_nfa:
+        .byte   $84
+        .byte   "CLC"
+        .byte   $C8
+; ----------------------------------------------------------------------------
+        .word   OPCH_nfa
+        .word   DOCOL
+        .word   LIT
+        .word   $80
+        .word   OR
+        .word   AYX
+        .word   CSTORE
+        .word   LIT
+        .word   $03
+        .word   ANDforth
+        .word   LIT
+        .word   $04
+        .word   PLUS
+        .word   MON
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+; KBD:_nfa
+KBDCOL_nfa:
+        .byte   $84
+        .byte   "KBD"
+        .byte   $BA
+; ----------------------------------------------------------------------------
+        .word   CLCH_nfa
+        .word   DOCOL
+        .word   CREATE
+        .word   CCOMMA
+        .word   PSEMICODE
+; ----------------------------------------------------------------------------
+DOKBDCOL:
+        stx     _XSAVE
+        ldy     #$02
+        lda     (W),y
+        brk  :  .byte XGOKBD                    ; Telemon
+        ldx     _XSAVE
+        jmp     NEXT
+
+; ----------------------------------------------------------------------------
+QWERTY_nfa:
+        .byte   $86
+        .byte   "QWERT"
+        .byte   $D9
+; ----------------------------------------------------------------------------
+        .word   KBDCOL_nfa
+        .word   DOKBDCOL
+; ----------------------------------------------------------------------------
+        .byte   $00
+; ----------------------------------------------------------------------------
+AZERTY_nfa:
+        .byte   $86
+        .byte   "AZERT"
+        .byte   $D9
+; ----------------------------------------------------------------------------
+        .word   QWERTY_nfa
+        .word   DOKBDCOL
+; ----------------------------------------------------------------------------
+        .byte   $01
+; ----------------------------------------------------------------------------
+FRENCH_nfa:
+        .byte   $86
+        .byte   "FRENC"
+        .byte   $C8
+; ----------------------------------------------------------------------------
+        .word   AZERTY_nfa
+        .word   DOKBDCOL
+; ----------------------------------------------------------------------------
+        .byte   $02
+; ----------------------------------------------------------------------------
+ACCENT_nfa:
+        .byte   $86
+        .byte   "ACCEN"
+        .byte   $D4
+; ----------------------------------------------------------------------------
+        .word   FRENCH_nfa
+        .word   DOKBDCOL
+; ----------------------------------------------------------------------------
+        .byte   $04
+; ----------------------------------------------------------------------------
+; ?TERM_nfa
+QTERM_nfa:
+        .byte   $85
+        .byte   "?TER"
+        .byte   $CD
+; ----------------------------------------------------------------------------
+        .word   ACCENT_nfa
+        .word   QTERM
+; ----------------------------------------------------------------------------
+; ?TERM_pfa
+QTERM:
+        stx     _XSAVE
+        ldx     #$00
+        brk  :  .byte XTSTBU                    ; Telemon
+        bcs     LEF43
+        iny
+LEF43:
+        tya
+        ldx     _XSAVE
+        jmp     PUSH0A
+
+; ----------------------------------------------------------------------------
+CKEY_nfa:
+        .byte   $84
+        .byte   "CKE"
+        .byte   $D9
+; ----------------------------------------------------------------------------
+        .word   QTERM_nfa
+        .word   CKEY_pfa
+; ----------------------------------------------------------------------------
+CKEY_pfa:
+        lda     $0567
+        ora     #$0C
+        sta     CallTel+1
+        jsr     CallTel
+        jmp     PUSH0A
+
+; ----------------------------------------------------------------------------
+CEMIT_nfa:
+        .byte   $85
+        .byte   "CEMI"
+        .byte   $D4
+; ----------------------------------------------------------------------------
+        .word   CKEY_nfa
+        .word   CEMIT_pfa
+; ----------------------------------------------------------------------------
+CEMIT_pfa:
+        lda     $0567
+        tay
+        ora     #$10
+        sta     CallTel+1
+        lda     BOT,x
+        jsr     CallTel
+        lda     scrX,y
+        ldy     LCA07
+        sta     (UP),y
+        jmp     POP
+
+-last_ios_word_nfa = CEMIT_nfa
+#endif
+
+#endif

@@ -1,0 +1,575 @@
+; ----------------------------------------------------------------------------
+; Extensions pour le CH376
+
+#ifdef WITH_CH376
+
+#ifndef CH376_INC
+#define CH376_INC
+#echo "Ajout du vocabulaire CH376"
+
+;PREV_VOC_LINK = last_voc_link
+;-last_voc_link = SOUNDS_LINK
+
+; last_forth_word_nfa = HIMEM_nfa
+
+CH376_nfa:
+        .byte   $C5
+        .byte   "CH37","6"+$80
+; ----------------------------------------------------------------------------
+        .word   last_forth_word_nfa
+        .word   DODOES
+        .word   DOVOC
+        .word   CH376_voc
+CH376_LINK:
+;        .word   FORTH_LINK
+        .word   last_voc_link
+
+-last_voc_link = CH376_LINK
+-last_forth_word_nfa = CH376_nfa
+
+; ----------------------------------------------------------------------------
+Pread_nfa:
+        .byte $86
+        .byte "(read",")"+$80
+        .word FORTH_voc
+Pread:
+        .word *+2
+.(
+;(read):
+	lda #$01
+	jsr SETUP	; Récupère l'adresse
+begin
+	lda #$27	; ReadUSB
+	sta $0341
+	lda $0340
+	sta N+2	; Nombre de caractères à lire
+	beq fin
+        ldy #$00	; Initialise Y (remarque: inutile la première fois)
+loop:
+	lda $0340
+	sta (N),y
+	iny
+	dec N+2
+	bne loop
+
+	clc		; Calcule l'adresse du caractère suivant pour la prochaine boucle
+	tya
+	adc N
+	sta N
+	bcc suite
+	inc N+1
+suite:
+	lda #$3b
+	sta $0341
+	lda #$22
+	sta $0341
+	lda $0340
+	cmp #$1d
+	beq begin
+fin
+	jmp NEXT
+.)
+
+Pwrite_nfa:
+        .byte $87
+        .byte "(write",")"+$80
+        .word Pread_nfa
+Pwrite:
+        .word *+2
+.(
+;(write):
+	lda #$01
+	jsr SETUP	; Récupère l'adresse
+begin
+	lda #$2d	; WriteRqData
+	sta $0341
+	lda $0340
+	sta N+2	; Nombre de caractères à écrire
+	beq fin
+        ldy #$00	; Initialise Y (remarque: inutile la première fois)
+loop:
+	lda (N),y
+	sta $0340
+	iny
+	dec N+2
+	bne loop
+
+	clc		; Calcule l'adresse du caractère suivant pour la prochaine boucle
+	tya
+	adc N
+	sta N
+	bcc suite
+	inc N+1
+suite:
+	lda #$3d	; ByteWrGo
+	sta $0341
+	lda #$22
+	sta $0341
+	lda $0340
+	cmp #$1e
+	beq begin
+fin
+	jmp NEXT
+.)
+
+; ----------------------------------------------------------------------------
+; : ch376:<BUILDS C, DOES> C@ 0341 C! 0340 C@ ;
+;
+ch376col_nfa:
+        .byte $86
+        .byte "ch376",":"+$80
+        .word Pwrite_nfa
+        .word DOCOL
+        .word BUILDS
+        .word CCOMMA
+        .word DOES
+DOch376col:
+        .word CAT
+        .word LIT
+        .word $0341
+        .word CSTORE
+        .word LIT
+        .word $0340
+        .word CAT
+        .word SEMIS
+
+last_ch376_word_nfa = ch376col_nfa
+
+; ----------------------------------------------------------------------------
+; : CH376chk: <BUILDS SWAP C, C, DOES> DUP C@ 341 C!
+;   ( GetStatus ) 22 341 C! 340 C@  SWAP 1+ C@ = ;
+;
+#if 0
+ch376chkcol_nfa:
+        .byte $89
+        .byte "ch376chk",":"+$80
+        .word last_ch376_word_nfa
+        .word DOCOL
+        .word BUILDS
+        .word SWAP
+        .word CCOMMA
+        .word CCOMMA
+        .word DOES
+DOch376chkcol:
+        .word DUP
+        .word CAT
+        .word LIT
+        .word $0341
+        .word CSTORE
+#ifldef GetStatus
+        .word GetStatus
+#else
+        .word LIT
+        .word $22
+        .word LIT
+        .word $341
+        .word CSTORE
+        .word LIT
+        .word $0340
+        .word CAT
+#endif
+        .word SWAP
+        .word ONEP
+        .word CAT
+        .word EQUAL
+        .word SEMIS
+
+-last_ch376_word_nfa = ch376chkcol_nfa
+#endif
+
+; ----------------------------------------------------------------------------
+; : SetUSB 15 0341 C! 6 0340 C! 0340 C@ ;
+; ( -- b )
+SetUSB_nfa:
+        .byte $86
+        .byte "SetUS","B"+$80
+        .word last_ch376_word_nfa
+#ifdef CH376_FORTH
+        .word DOCOL
+        .word LIT
+        .word $15
+        .word LIT
+        .word $0341
+        .word CSTORE
+        .word LIT
+        .word 6
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word LIT
+        .word  $0340
+        .word CAT
+        .word SEMIS
+#else
+	.word *+2
+	lda #$15
+	sta $0341
+	lda #$06
+	sta $0340
+	lda $0340
+	jmp PUSH0A
+#endif
+; ----------------------------------------------------------------------------
+; : SetFilename 2F 0341 C! BL WORD HERE COUNT 0 DO DUP C@ 340 C! 1+ +LOOP DROP 0 0340 C! ;
+;
+SetFilename_nfa:
+        .byte $8B
+        .byte "SetFilenam","e"+$80
+        .word SetUSB_nfa
+.(
+        .word DOCOL
+        .word LIT
+        .word $2F
+        .word LIT
+        .word $0341
+        .word CSTORE
+        .word BL
+        .word WORD
+        .word HERE
+        .word COUNT
+        .word LIT
+        .word $00
+        .word PDO
+ZZloop:
+        .word DUP
+        .word CAT
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word ONEP
+        .word PLOOP
+        .word ZZloop
+        .word DROP
+        .word LIT
+        .word $00
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word SEMIS
+.)
+
+; ----------------------------------------------------------------------------
+; 22 ch376: GetStatus
+;
+GetStatus_nfa:
+        .byte $89
+        .byte "GetStatu","s"+$80
+        .word SetFilename_nfa
+GetStatus:
+        .word DODOES
+        .word DOch376col
+        .byte $22
+
+; ----------------------------------------------------------------------------
+; 31 ch376: Mount
+;
+Mount_nfa:
+        .byte $85
+        .byte "Moun","t"+$80
+        .word GetStatus_nfa
+        .word DODOES
+        .word DOch376col
+        .byte $31
+
+; ----------------------------------------------------------------------------
+; : SetByteRdWr 0341 C! 0100 /MOD SWAP 0340 C! 0340 C! GetStatus ;
+;
+SetByteRdWr_nfa
+        .byte $8B
+        .byte "SetByteRdW","r"+$80
+        .word Mount_nfa
+SetByteRdWr:
+        .word DOCOL
+;        .word LIT
+;        .word $3A
+        .word LIT
+        .word $0341
+        .word CSTORE
+        .word LIT
+        .word $0100
+        .word SLMOD
+        .word SWAP
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word GetStatus
+        .word SEMIS
+
+; ----------------------------------------------------------------------------
+; : SetByteLocate 39 0341 C! 0100 /MOD SWAP 0340 C! 0340 C! 0 0340 OVER OVER C! C! GetStatus ;
+;
+SetByteLocate_nfa
+        .byte $8D
+        .byte "SetByteLocat","e"+$80
+        .word SetByteRdWr_nfa
+SetByteLocate:
+        .word DOCOL
+        .word LIT
+        .word $39
+        .word LIT
+        .word $0341
+        .word CSTORE
+        .word LIT
+        .word $0100
+        .word SLMOD
+        .word SWAP
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word LIT
+        .word $00
+        .word LIT
+        .word $0340
+        .word OVER
+        .word OVER
+        .word CSTORE
+        .word CSTORE
+        .word GetStatus
+        .word SEMIS
+
+; ----------------------------------------------------------------------------
+; : FileOpen 32 0341 C! GetStatus ;
+;
+FileOpen_nfa
+        .byte $88
+        .byte "FileOpe","n"+$80
+        .word SetByteLocate_nfa
+        .word DOCOL
+        .word LIT
+        .word $32
+        .word LIT
+        .word $0341
+        .word CSTORE
+        .word GetStatus
+        .word SEMIS
+
+; ----------------------------------------------------------------------------
+#if 0
+; : FileClose 36 0341 C! 0340 C! GetStatus ;
+;
+FileClose_nfa
+        .byte $89
+        .byte "FileClos","e"+$80
+        .word ByteRdGo_nfa
+        .word DOCOL
+        .word LIT
+        .word $36
+        .word LIT
+        .word $0341
+        .word CSTORE
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word GetStatus
+        .word SEMIS
+#endif
+
+; ----------------------------------------------------------------------------
+; ( ad bloc -- 1 | ad 0 )
+; : read B/BUF * SetByteLocate 14 = IF B/BUF 3A SetByteRdWr 1D = IF (read) 1 ELSE 0 THEN THEN ;
+;
+read_nfa:
+        .byte $84
+        .byte "rea","d"+$80
+        .word FileOpen_nfa
+read:
+.(
+        .word DOCOL
+        .word B_BUF
+        .word STAR
+        .word SetByteLocate
+        .word LIT
+        .word $14
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZend
+        .word B_BUF
+        .word LIT
+        .word $3A
+        .word SetByteRdWr
+        .word LIT
+        .word $1D
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZelse
+        .word Pread
+        .word ONE
+        .word BRANCH
+        .word ZZend
+ZZelse:
+        .word ZERO
+ZZend:
+        .word SEMIS
+.)
+
+-last_ch376_word_nfa = read_nfa
+
+; ----------------------------------------------------------------------------
+#if 0
+; : SetByteWrite 3C 0341 C! 0100 /MOD SWAP 0340 C! 0340 C! GetStatus ;
+;
+SetByteWrite_nfa
+        .byte $8C
+        .byte "SetByteWrit","e"+$80
+        .word last_ch376_word_nfa
+SetByteWrite:
+        .word DOCOL
+        .word LIT
+        .word $3C
+        .word LIT
+        .word $0341
+        .word CSTORE
+        .word LIT
+        .word $0100
+        .word SLMOD
+        .word SWAP
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word LIT
+        .word $0340
+        .word CSTORE
+        .word GetStatus
+        .word SEMIS
+
+-last_ch376_word_nfa = SetByteWrite_nfa
+#endif
+
+; ----------------------------------------------------------------------------
+; ( ad bloc -- 1 | ad 0 )
+; : write B/BUF * SetByteLocate 14 = IF B/BUF 3C SetByteRdWr 14 = IF (write) 1 ELSE 0 THEN THEN ;
+;
+write_nfa:
+        .byte $85
+        .byte "writ","e"+$80
+        .word last_ch376_word_nfa
+write:
+.(
+        .word DOCOL
+        .word B_BUF
+        .word STAR
+        .word SetByteLocate
+        .word LIT
+        .word $14
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZend
+        .word B_BUF
+        .word LIT
+        .word $3C
+        .word SetByteRdWr
+        .word LIT
+        .word $14
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZelse
+        .word Pwrite
+        .word ONE
+        .word BRANCH
+        .word ZZend
+ZZelse:
+        .word ZERO
+ZZend:
+        .word SEMIS
+.)
+
+-last_ch376_word_nfa = write_nfa
+
+#ifdef CH376_Extended
+; ----------------------------------------------------------------------------
+; 1 ch376: GetVersion
+;
+GetVersion_nfa:
+        .byte $8A
+        .byte "GetVersio","n"+$80
+        .word last_ch376_word_nfa
+        .word DODOES
+        .word DOch376col
+        .byte $01
+
+; ----------------------------------------------------------------------------
+; : ByteRdGoB 0341 C! GetStatus ;
+;
+ByteRdGo_nfa
+        .byte $88
+        .byte "ByteRdG","o"+$80
+        .word GetVersion_nfa
+ByteRdGo:
+        .word DOCOL
+        .word LIT
+        .word $3B
+        .word LIT
+        .word $0341
+        .word CSTORE
+        .word GetStatus
+        .word SEMIS
+
+; ----------------------------------------------------------------------------
+; 27 ch376: ReadUSB
+;
+ReadUSB_nfa:
+        .byte $87
+        .byte "ReadUS","B"+$80
+        .word ByteRdGo_nfa
+        .word DODOES
+        .word DOch376col
+        .byte $27
+
+-last_ch376_word_nfa = ReadUSB_nfa
+
+#endif
+; ----------------------------------------------------------------------------
+
+
+; ----------------------------------------------------------------------------
+
+; ----------------------------------------------------------------------------
+; ( bufad bloc r/w -- )
+; Avec bloc >= 1 (/!\ Pas de vérification)
+; : R/W IF 1- read 0= IF B/BUF BLANKS THEN ELSE 1- write . THEN ;
+RSLW_nfa:
+        .byte $83
+        .byte "R/", "W"+$80
+        .word last_forth_word_nfa
+RSLW:
+.(
+        .word DOCOL
+        .word ZBRANCH
+        .word ZZelse
+        .word ONES
+        .word read
+        .word ZEQUAL
+        .word ZBRANCH
+        .word ZZthen
+        .word B_BUF
+        .word BLANKS
+ZZthen:
+        .word BRANCH
+        .word ZZend
+ZZelse:
+        .word ONES
+        .word write
+        .word DOT
+ZZend:
+        .word SEMIS
+.)
+
+-last_forth_word_nfa = RSLW_nfa
+
+#else
+#echo "Ajout entête du vocabulaire CH376"
+
+CH376_voc = RAM_START-2+(*-DictInitTable)
+        .byte   $81,$A0
+        .word   last_ch376_word_nfa
+
+
+#endif
+
+#endif
