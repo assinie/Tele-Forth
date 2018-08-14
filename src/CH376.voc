@@ -7,6 +7,17 @@
 #define CH376_INC
 #echo "Ajout du vocabulaire CH376"
 
+
+;---------------------------------------------------------------------------
+;
+; Adresse de l'interface CH376
+;
+;---------------------------------------------------------------------------
+ch376_command = $341
+ch376_data    = $340
+
+
+
 ;PREV_VOC_LINK = last_voc_link
 ;-last_voc_link = SOUNDS_LINK
 
@@ -38,15 +49,16 @@ Pread:
 ;(read):
 	lda #$01
 	jsr SETUP	; Récupère l'adresse
+	stx _XSAVE	; Sauvegarde car détruit par WaitResponse
 begin
 	lda #$27	; ReadUSB
-	sta $0341
-	lda $0340
+	sta ch376_command
+	lda ch376_data
 	sta N+2	; Nombre de caractères à lire
 	beq fin
         ldy #$00	; Initialise Y (remarque: inutile la première fois)
 loop:
-	lda $0340
+	lda ch376_data
 	sta (N),y
 	iny
 	dec N+2
@@ -60,13 +72,15 @@ loop:
 	inc N+1
 suite:
 	lda #$3b
-	sta $0341
+	sta ch376_command
 	lda #$22
-	sta $0341
-	lda $0340
+	sta ch376_command
+;	lda ch376_data
+	jsr _WaitResponse
 	cmp #$1d
 	beq begin
 fin
+	ldx _XSAVE	; Restaure X
 	jmp NEXT
 .)
 
@@ -80,16 +94,17 @@ Pwrite:
 ;(write):
 	lda #$01
 	jsr SETUP	; Récupère l'adresse
+	stx _XSAVE	; Sauvegarde car détruit par WaitResponse
 begin
 	lda #$2d	; WriteRqData
-	sta $0341
-	lda $0340
+	sta ch376_command
+	lda ch376_data
 	sta N+2	; Nombre de caractères à écrire
 	beq fin
         ldy #$00	; Initialise Y (remarque: inutile la première fois)
 loop:
 	lda (N),y
-	sta $0340
+	sta ch376_data
 	iny
 	dec N+2
 	bne loop
@@ -102,14 +117,50 @@ loop:
 	inc N+1
 suite:
 	lda #$3d	; ByteWrGo
-	sta $0341
+	sta ch376_command
 	lda #$22
-	sta $0341
-	lda $0340
+	sta ch376_command
+;	lda ch376_data
+	jsr _WaitResponse
 	cmp #$1e
 	beq begin
 fin
+	ldx _XSAVE	; Restaure X
 	jmp NEXT
+.)
+
+
+_WaitResponse
+.(
+;---------------------------------------------------------------------------
+; WaitResponse:
+; A voir si il faut preserver X et Y
+;
+; Entree:
+;
+; Sortie:
+; Z: 0 -> ACC: Status du CH376
+; Z: 1 -> Timeout
+; X,Y: Modifies
+;---------------------------------------------------------------------------
+; 25 Octets
+;---------------------------------------------------------------------------
+	LDY #$FF
+ZZZ009
+	LDX #$FF
+ZZZ010
+	LDA ch376_command
+	BMI ZZZ011
+	LDA #$22
+	STA ch376_command
+	LDA ch376_data
+	RTS
+ZZZ011
+	DEX
+	BNE ZZZ010
+	DEY
+	BNE ZZZ009
+	RTS
 .)
 
 ; ----------------------------------------------------------------------------
@@ -126,10 +177,10 @@ ch376col_nfa:
 DOch376col:
         .word CAT
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CAT
         .word SEMIS
 
@@ -154,7 +205,7 @@ DOch376chkcol:
         .word DUP
         .word CAT
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
 #ifldef GetStatus
         .word GetStatus
@@ -165,7 +216,7 @@ DOch376chkcol:
         .word $341
         .word CSTORE
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CAT
 #endif
         .word SWAP
@@ -189,44 +240,63 @@ SetUSB_nfa:
         .word LIT
         .word $15
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
         .word LIT
         .word 6
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word LIT
-        .word  $0340
+        .word ch376_data
         .word CAT
         .word SEMIS
 #else
 	.word *+2
 	lda #$15
-	sta $0341
+	sta ch376_command
 	lda #$06
-	sta $0340
-	lda $0340
+	sta ch376_data
+	lda ch376_data
 	jmp PUSH0A
 #endif
+
 ; ----------------------------------------------------------------------------
-; : SetFilename 2F 0341 C! BL WORD HERE COUNT 0 DO DUP C@ 340 C! 1+ +LOOP DROP 0 0340 C! ;
+; OLD:
+; : SetFilename 2F 0341 C!   BL WORD HERE COUNT   0 DO DUP C@ 0340 C! 1+ LOOP DROP 0 0340 C! ;
+;
+; Utilisation: SetFilename FICHIER.FTH
+;
+; NEW:
+; : SetFilename 2F 0341 C!   0518 0C -TRAILING    0 DO DUP C@ 0340 C! 1+ LOOP DROP 0 0340 C! ;
+;
+; Utilisation LIT" FORTH.DAT" SetFilename
 ;
 SetFilename_nfa:
         .byte $8B
         .byte "SetFilenam","e"+$80
         .word SetUSB_nfa
+SetFilename:
 .(
         .word DOCOL
         .word LIT
         .word $2F
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
+
+#ifdef CH376_OLD
         .word BL
         .word WORD
         .word HERE
         .word COUNT
+#else
+	.word LIT
+	.word $0518
+	.word LIT
+	.word $0C
+	.word DTRAILING
+#endif
         .word LIT
         .word $00
         .word PDO
@@ -234,7 +304,7 @@ ZZloop:
         .word DUP
         .word CAT
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word ONEP
         .word PLOOP
@@ -243,7 +313,7 @@ ZZloop:
         .word LIT
         .word $00
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word SEMIS
 .)
@@ -283,17 +353,17 @@ SetByteRdWr:
 ;        .word LIT
 ;        .word $3A
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
         .word LIT
         .word $0100
         .word SLMOD
         .word SWAP
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word GetStatus
         .word SEMIS
@@ -310,22 +380,22 @@ SetByteLocate:
         .word LIT
         .word $39
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
         .word LIT
         .word $0100
         .word SLMOD
         .word SWAP
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word LIT
         .word $00
         .word LIT
-        .word $0340
+        .word ch376_data
         .word OVER
         .word OVER
         .word CSTORE
@@ -340,34 +410,60 @@ FileOpen_nfa
         .byte $88
         .byte "FileOpe","n"+$80
         .word SetByteLocate_nfa
+FileOpen:
         .word DOCOL
         .word LIT
         .word $32
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
         .word GetStatus
+
+#ifndef CH376_OLD
+;	0517 0548 C@ 1- 1 AND 0260 * 0B40 + 0D CMOVE ;
+        .word LIT
+        .word $517
+	.word LIT
+	.word $0548
+	.word CAT
+	.word ONES
+	.word ONE
+	.word ANDforth
+	.word LIT
+	.word $0260
+	.word STAR
+	.word LIT
+	.word $0B40
+	.word PLUS
+	.word LIT
+	.word $0D
+	.word CMOVE
+#endif
         .word SEMIS
 
+-last_ch376_word_nfa = FileOpen_nfa
 ; ----------------------------------------------------------------------------
-#if 0
+#ifdef WITH_AUTOSTART_SUPPORT
 ; : FileClose 36 0341 C! 0340 C! GetStatus ;
 ;
 FileClose_nfa
         .byte $89
         .byte "FileClos","e"+$80
-        .word ByteRdGo_nfa
+        .word last_ch376_word_nfa
+FileClose:
         .word DOCOL
         .word LIT
         .word $36
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word GetStatus
         .word SEMIS
+
+-last_ch376_word_nfa = FileClose_nfa
 #endif
 
 ; ----------------------------------------------------------------------------
@@ -377,7 +473,7 @@ FileClose_nfa
 read_nfa:
         .byte $84
         .byte "rea","d"+$80
-        .word FileOpen_nfa
+        .word last_ch376_word_nfa
 read:
 .(
         .word DOCOL
@@ -423,17 +519,17 @@ SetByteWrite:
         .word LIT
         .word $3C
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
         .word LIT
         .word $0100
         .word SLMOD
         .word SWAP
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word LIT
-        .word $0340
+        .word ch376_data
         .word CSTORE
         .word GetStatus
         .word SEMIS
@@ -505,7 +601,7 @@ ByteRdGo:
         .word LIT
         .word $3B
         .word LIT
-        .word $0341
+        .word ch376_command
         .word CSTORE
         .word GetStatus
         .word SEMIS
@@ -528,6 +624,126 @@ ReadUSB_nfa:
 
 
 ; ----------------------------------------------------------------------------
+
+; ----------------------------------------------------------------------------
+; Pour support STARTUP / AUTOSTART
+#ifdef WITH_AUTOSTART_SUPPORT
+; : FILENAME COUNT DUP 0C > 89 ?ERROR 0518 SWAP OVER 0D BLANKS CMOVE ;
+;
+FILENAME_nfa:
+	.byte $88
+	.byte "FILENAM","E"+$80
+	.word last_forth_word_nfa
+FILENAME:
+.(
+        .word DOCOL
+        .word COUNT
+        .word DUP
+        .word LIT
+        .word $0C
+        .word GREAT
+        .word LIT
+        .word $89
+        .word QERROR
+        .word LIT
+        .word $0518
+        .word SWAP
+        .word OVER
+        .word LIT
+        .word $0D
+        .word BLANKS
+        .word CMOVE
+        .word SEMIS
+.)
+
+-last_forth_word_nfa = FILENAME_nfa
+
+; ----------------------------------------------------------------------------
+; : ?FILE FILENAME CH376 SetFilename2 FileOpen 14 = IF 0 FileClose
+;  DROP 1 ELSE 0 THEN ;
+
+QFILE_nfa:
+	.byte $85
+	.byte "?FIL","E"+$80
+	.word last_forth_word_nfa
+QFILE:
+.(
+	.word DOCOL
+        .word FILENAME
+        .word SetFilename
+        .word FileOpen
+        .word LIT
+        .word $14
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZelse
+        .word ZERO
+        .word FileClose
+        .word DROP
+        .word ONE
+        .word BRANCH
+        .word ZZend
+ZZelse:
+         .word ZERO
+ZZend:
+        .word SEMIS
+.)
+
+-last_forth_word_nfa = QFILE_nfa
+
+; ----------------------------------------------------------------------------
+; : (DOS) DUP XOPEN = IF DROP FileOpen = 0= 81
+;       ELSE DROP 1 1C ;
+;
+; /?\ A définir comme DEFER (DOS)
+PDOS_nfa:
+	.byte $85
+	.byte "(DOS",")"+$80
+	.word last_forth_word_nfa
+PDOS:
+.(
+        .word DOCOL
+        .word DUP
+        .word LIT
+        .word XOPEN
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZelse
+        .word DROP
+        .word FileOpen
+        .word LIT
+        .word $14
+        .word EQUAL
+        .word ZEQUAL
+        .word LIT
+        .word $81
+        .word BRANCH
+        .word ZZend
+ZZelse
+        .word DROP
+        .word ONE
+        .word LIT
+        .word $1c
+ZZend
+        .word SEMIS
+.)
+
+
+; ----------------------------------------------------------------------------
+; DOS
+;
+DOS_nfa:
+	.byte $83
+	.byte "DO","S"+$80
+	.word PDOS_nfa
+DOS:
+        .word DOCOL
+        .word PDOS
+        .word QERROR
+        .word SEMIS
+
+-last_forth_word_nfa = DOS_nfa
+#endif
 
 ; ----------------------------------------------------------------------------
 ; ( bufad bloc r/w -- )

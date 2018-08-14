@@ -26,7 +26,7 @@
 ;#define WITH_STRATSED_MINIMAL
 ;#define WITH_STRATSED
 
-;#define WITH_AUTOSTART_SUPPORT
+#define WITH_AUTOSTART_SUPPORT
 ;#define WITH_OVERLAYS_SUPPORT
 ;#define WITH_EXTERNAL_HELPERS
 
@@ -44,6 +44,8 @@
 ;#define WITH_ROMend
 
 #define WITH_CH376
+; Necessaire pour support AUTOSTART
+#define CH376_Extended
 
 ; ----------------------------------------------------------------------------
 
@@ -51,9 +53,10 @@
 #define WITH_STRATSED_MINIMAL
 #endif
 
-#ifdef WITH_AUTOSTART_SUPPORT
-#define WITH_STRATSED
-#endif
+;#ifdef WITH_AUTOSTART_SUPPORT
+; Need some OS support?
+;#define WITH_STRATSED
+;#endif
 
 #ifdef WITH_EXTERNAL_HELPERS
 #define WITH_OVERLAYS_SUPPORT
@@ -6518,7 +6521,12 @@ LE69E:
 #ifldef STARTUP
 #else
 #echo "Ajout du mot STARTUP de base"
-
+;
+; /?\ A transférer dans Stratsed_extended.voc et CH376.voc
+; et mettre ici : STARTUP ;
+; ou definir STARTUP comme DEFER STARTUP et deinir (STARTUP) dans
+; Stratsed_extended.voc et CH376.voc et faire ' (STARTUP) IS STARTUP
+;
 ; ----------------------------------------------------------------------------
 STARTUP_nfa:
         .byte   $87
@@ -6592,6 +6600,8 @@ LEA81:
 
 #ifdef WITH_AUTOSTART_SUPPORT
 #echo "Ajout du support autostart 'FORTH.DAT'"
+
+#ifdef WITH_STRATSED
         .word   LIT
         .word   FRW
         .word   LIT
@@ -6602,6 +6612,7 @@ LEA81:
         .word   LIT
         .word   bitmfc
         .word   STORE
+#endif
 
         .word   PLITQ
 ; ----------------------------------------------------------------------------
