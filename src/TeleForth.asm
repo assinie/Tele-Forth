@@ -58,6 +58,13 @@
 ;#define WITH_STRATSED
 ;#endif
 
+#ifdef WITH_AUTOSTART_SUPPORT
+#ifndef AUTOSTART_FILE
+#define AUTOSTART_FILE "FORTH.DAT"
+#endif
+#echo 'Fichier AUTOSTART par defaut: AUTOSTART_FILE'
+#endif
+
 #ifdef WITH_EXTERNAL_HELPERS
 #define WITH_OVERLAYS_SUPPORT
 #endif
@@ -6518,6 +6525,13 @@ LE69E:
 #endif
 
 ; ----------------------------------------------------------------------------
+; Vocabulaire CH376
+; ----------------------------------------------------------------------------
+#ifdef WITH_CH376
+#include "CH376.voc"
+#endif
+
+; ----------------------------------------------------------------------------
 #ifldef STARTUP
 #else
 #echo "Ajout du mot STARTUP de base"
@@ -6599,47 +6613,9 @@ LEA81:
         .word   CSTORE
 
 #ifdef WITH_AUTOSTART_SUPPORT
-#echo "Ajout du support autostart 'FORTH.DAT'"
-
-#ifdef WITH_STRATSED
-        .word   LIT
-        .word   FRW
-        .word   LIT
-        .word   xfield+1
-        .word   STORE
-        .word   LIT
-        .word   $FFFF
-        .word   LIT
-        .word   bitmfc
-        .word   STORE
+#echo "Pas de autostart 'FORTH.DAT' possible"
 #endif
 
-        .word   PLITQ
-; ----------------------------------------------------------------------------
-        .byte   $09
-        .byte   "FORTH.DAT"
-
-; ----------------------------------------------------------------------------
-        .word   QFILE
-        .word   ZBRANCH
-        .word   LEAFF
-        .word   LIT
-        .word   $08
-        .word   LIT
-        .word   ftype
-        .word   CSTORE
-        .word   LIT
-        .word   XOPEN
-        .word   DOS
-        .word   ZERO
-        .word   BLK
-        .word   STORE
-        .word   LBRACKET
-        .word   RPSTORE
-        .word   ONE
-        .word   LOAD
-        .word   QUIT
-#endif
 LEAFF:
         .word   SEMIS
 
@@ -6939,13 +6915,6 @@ ROMend:
         .word   SEMIS
 
 -last_forth_word_nfa = ROMend_nfa
-#endif
-
-; ----------------------------------------------------------------------------
-; Vocabulaire CH376
-; ----------------------------------------------------------------------------
-#ifdef WITH_CH376
-#include "CH376.voc"
 #endif
 
 ; ----------------------------------------------------------------------------

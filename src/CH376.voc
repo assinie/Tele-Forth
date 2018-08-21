@@ -229,6 +229,30 @@ DOch376chkcol:
 #endif
 
 ; ----------------------------------------------------------------------------
+; : Exists 55 0341 C! 0340 C@ AA = ;
+; ( -- b )
+Exists_nfa:
+        .byte $86
+        .byte "Exist","s"+$80
+        .word last_ch376_word_nfa
+Exists
+.(
+        .word *+2
+        lda #$06
+        sta ch376_command
+        lda #$00
+        sta ch376_data
+        ldy ch376_data
+        cpy #$FF
+        bne fin
+        lda #$01
+fin
+        jmp PUSH0A
+.)
+
+-last_ch376_word_nfa = Exists_nfa
+
+; ----------------------------------------------------------------------------
 ; : SetUSB 15 0341 C! 6 0340 C! 0340 C@ ;
 ; ( -- b )
 SetUSB_nfa:
@@ -236,6 +260,7 @@ SetUSB_nfa:
         .byte "SetUS","B"+$80
         .word last_ch376_word_nfa
 #ifdef CH376_FORTH
+SetUSB
         .word DOCOL
         .word LIT
         .word $15
@@ -252,13 +277,15 @@ SetUSB_nfa:
         .word CAT
         .word SEMIS
 #else
+SetUSB
 	.word *+2
 	lda #$15
 	sta ch376_command
 	lda #$06
 	sta ch376_data
-	lda ch376_data
-	jmp PUSH0A
+;	lda ch376_data
+;	jmp PUSH0A
+        jmp NEXT
 #endif
 
 ; ----------------------------------------------------------------------------
@@ -337,6 +364,7 @@ Mount_nfa:
         .byte $85
         .byte "Moun","t"+$80
         .word GetStatus_nfa
+Mount:
         .word DODOES
         .word DOch376col
         .byte $31
@@ -689,11 +717,139 @@ ZZend:
         .word SEMIS
 .)
 
+
+
 -last_forth_word_nfa = QFILE_nfa
 
 ; ----------------------------------------------------------------------------
-; : (DOS) DUP XOPEN = IF DROP FileOpen = 0= 81
+#echo "Ajout du mot STARTUP avec suppport CH376";
+STARTUP_nfa:
+        .byte   $87
+        .byte   "STARTU"
+        .byte   $D0
+; ----------------------------------------------------------------------------
+        .word   last_forth_word_nfa
+STARTUP:
+        .word   DOCOL
+        .word   LIT
+        .word   $60
+        .word   ZERO
+        .word   LIT
+        .word   CallTel
+        .word   TWOSTORE
+        .word   LIT
+        .word   v2dra
+        .word   CAT
+        .word   LIT
+        .word   $07
+        .word   ANDforth
+        .word   LIT
+        .word   vnmi
+        .word   CSTORE
+        .word   LIT
+        .word   $04
+        .word   PORIGIN
+        .word   LIT
+        .word   vnmi+1
+        .word   STORE
+;
+        .word   Exists
+        .word   ZEQUAL
+;
+        .word   ZBRANCH
+        .word   LEA81
+        .word   LIT
+        .word   $88                                                             ; /?\ "Pas de STRATSED" à remplacer par: 8A->"Pas de lecteur"
+        .word   MESSAGE
+        .word   BRANCH
+        .word   LEAFF
+LEA81:
+        .word   LIT
+        .word   DOSBUFFERS
+        .word   LIT
+        .word   $07C0
+        .word   ERASE
+        .word   LIT
+        .word   $02
+        .word   LIT
+        .word   nbfic
+        .word   CSTORE
+        .word   LIT
+        .word   DOSBUFFERS
+        .word   LIT
+        .word   tampfc
+        .word   STORE
+        .word   ONE
+        .word   LIT
+        .word   ficnum
+        .word   CSTORE
+        .word   LIT
+        .word   v2dra
+        .word   CAT
+        .word   LIT
+        .word   $07
+        .word   ANDforth
+        .word   LIT
+        .word   xfield
+        .word   CSTORE
+
+#ifdef WITH_AUTOSTART_SUPPORT
+#echo "Ajout du support autostart (fichier: AUTOSTART_FILE)"
+
+	.word SetUSB
+	.word Mount
+	.word DROP								; Modifier 'Mount' pour qu'il ne fasse pas le 340 C@
+	.word GetStatus
+	.word LIT
+	.word $14
+	.word EQUAL
+	.word ZBRANCH
+	.word LEAFF
+
+        .word   PLITQ
+; ----------------------------------------------------------------------------
+.(
+
+        .byte   end-*-1
+        .byte   AUTOSTART_FILE
+        end=*
+.)
+; ----------------------------------------------------------------------------
+        .word   QFILE
+        .word   ZBRANCH
+        .word   LEAFF
+        .word   LIT
+        .word   $08
+        .word   LIT
+        .word   ftype
+        .word   CSTORE
+        .word   LIT
+        .word   XOPEN
+        .word   DOS
+        .word   ZERO
+        .word   BLK
+        .word   STORE
+        .word   LBRACKET
+        .word   RPSTORE
+        .word   ONE
+        .word   LOAD
+        .word   QUIT
+#endif
+LEAFF:
+;        .word   LIT
+;        .word   $8A
+;        .word   MESSAGE
+        .word   SEMIS
+
+-last_forth_word_nfa = STARTUP_nfa
+
+; ----------------------------------------------------------------------------
+; : (DOS) DUP XOPEN = IF DROP FileOpen 14 = 0= 81
 ;       ELSE DROP 1 1C ;
+;
+; Si on veut une compatibilité avec (DOS) du Stratsed:
+; : (DOS) DUP XOPEN FI DROP FileOpen 14 = 1 *
+;       ELSE DROP 8 ;
 ;
 ; /?\ A définir comme DEFER (DOS)
 PDOS_nfa:

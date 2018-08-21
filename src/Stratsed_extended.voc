@@ -328,7 +328,7 @@ DEL_nfa:
         .word   HERE
         .word   FILENAME
         .word   LIT
-        .word   hrs1
+        .word   XDELN
         .word   DOS
         .word   SEMIS
 ; ----------------------------------------------------------------------------
@@ -376,6 +376,7 @@ COPY_nfa:
 ;#endif
 
 ; ----------------------------------------------------------------------------
+#echo "Ajout du mot STARTUP avec suppport StratSed"
 STARTUP_nfa:
         .byte   $87
         .byte   "STARTU"
@@ -447,7 +448,7 @@ LEA81:
         .word   CSTORE
 
 #ifdef WITH_AUTOSTART_SUPPORT
-#echo "Ajout du support autostart 'FORTH.DAT'"
+#echo "Ajout du support autostart (fichier: AUTOSTART_FILE)"
         .word   LIT
         .word   FRW
         .word   LIT
@@ -461,9 +462,11 @@ LEA81:
 
         .word   PLITQ
 ; ----------------------------------------------------------------------------
-        .byte   $09
-        .byte   "FORTH.DAT"
-
+.(
+        .byte   end-*-1
+        .byte   AUTOSTART_FILE
+        end=*
+.)
 ; ----------------------------------------------------------------------------
         .word   QFILE
         .word   ZBRANCH
