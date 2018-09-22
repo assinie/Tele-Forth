@@ -11,12 +11,66 @@ EDITOR_voc = RAM_START-2+(*-DictInitTable)
         .word   last_EDITOR_word_nfa
 
 #else
-#echo "Ajout du vocabulaire EDITOR"
+; #echo "Ajout du vocabulaire EDITOR"
 
 ;-PREV_VOC_LINK = last_voc_link
 ;-last_voc_link = EDITOR_LINK
 
 ; last_forth_word_nfa = LINE_nfa
+
+; ----------------------------------------------------------------------------
+; TEXT vocabulaire FORTH
+#ifdef WITH_EDITOR_TEXT_LINE
+#echo "Ajout des mots TEXT et LINE"
+
+TEXT_nfa:
+        .byte   $84
+        .byte   "TEX"
+        .byte   $D4
+; ----------------------------------------------------------------------------
+        .word   last_forth_word_nfa
+; TEXT vocabulaire FORTH
+TEXT:
+        .word   DOCOL
+        .word   HERE
+        .word   CSLL
+        .word   ONEP
+        .word   BLANKS
+        .word   WORD
+        .word   HERE
+        .word   PAD
+        .word   CSLL
+        .word   ONEP
+        .word   CMOVE
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+; LINE vocabulaire FORTH
+LINE_nfa:
+        .byte   $84
+        .byte   "LIN"
+        .byte   $C5
+; ----------------------------------------------------------------------------
+        .word   TEXT_nfa
+; LINE vocabulaire FORTH
+LINE:
+        .word   DOCOL
+        .word   DUP
+        .word   LIT
+        .word   $FFF0
+        .word   ANDforth
+        .word   LIT
+        .word   $17
+        .word   QERROR
+        .word   SCR
+        .word   AT
+        .word   PLINE
+        .word   DROP
+        .word   SEMIS
+
+-last_forth_word_nfa = LINE_nfa
+#endif
+
+#echo "Ajout du vocabulaire EDITOR"
 
 EDITOR_nfa:
         .byte   $C6
@@ -344,14 +398,14 @@ MATCH_nfa:
         .byte   $C8
 ; ----------------------------------------------------------------------------
         .word   CLEAR_nfa
-LF4D6:
+MATCH:
         .word   DOCOL
         .word   TOR
         .word   TOR
         .word   TWODUP
         .word   RFROM
         .word   R
-        .word   LC771
+        .word   TWOSWAP
         .word   RFROM
         .word   SUB
         .word   ZERO
@@ -399,7 +453,7 @@ ONELINE:
         .word   DIGLAG
         .word   PAD
         .word   COUNT
-        .word   LF4D6
+        .word   MATCH
         .word   RNUM
         .word   PSTORE
         .word   SEMIS
@@ -659,7 +713,7 @@ UNDER_nfa:
         .word   SEMIS
 last_EDITOR_word_nfa = UNDER_nfa
 
-#ifdef WITH_SCRMOVE_SCRCOPY
+#ifdef WITH_EDITOR_SCRMOVE_SCRCOPY
 #echo "Ajout des mots SCRMOVE et SCRCOPY"
 ; ----------------------------------------------------------------------------
 SCRMOVE_nfa:
