@@ -1,16 +1,17 @@
-; Fichier
-XOPEN  = $1A
-XCLOSE = $1D
-XNOMFI = $24
-XCOPY  = $38
-XDELN  = $4D
-XDIRN  = $56
-XINITI = $5C
-XLOAD  = $62
-XSAVE  = $6B
-XTRVNM = $7D
-XSVSEC = $8C
-XSAY   = $8F
+; Fichier (appels StratSed sauf XNOMFI: appe Telemon)
+XOPEN  = $1A                                   ; Ouvre un fichier, nom dans BUFNOM ($0517-$0522), numéro logique dans FICNUM ($0548)
+XCLOSE = $1D                                   ; Ferme le fichier FICNUM
+XNOMFI = $24                                   ; (AY), longueur dans X --> BUFNOM (tient compte de l'extension par défaut). Retour X:0->longueur nulle, X:1->RAS (C:1->Jokers), X:2->modification du lecteur par défaut, X:>127->nom incorrect
+XCOPY  = $38                                   ; Copie de fichiers, source dans BUFTRV ($0100-), cible dans BUFNOM, VSALO0: b7=O,b6=M, VSALO1: b7=N,b6=C
+XDELN  = $4D                                   ; DEL
+XDIRN  = $56                                   ; Catalogue, nom -> BUFNOM
+XINITI = $5C                                   ; Initialiser, DRIVE: lecteur
+XLOAD  = $62                                   ; Charger fichier BUFNOM, VSALO0: 00->rien de spécial, 40->afficher status, 80->forcer pas d'exécution, VSALO1: 00-> rien de spécial, 80->charger à l'adresse DESALO
+XSAVE  = $6B                                   ; Sauver fichier BUFNOM, DESALO,FISALO,FTYPE, VSALO0: 00->SAVEO, 40->SAVEM, 80->SAVE, C0->SAVEU
+XTRVNM = $7D                                   ; Chercher fichier BUFNOM, retour avec Z=1 si trouvé
+XSVSEC = $8C                                   ; Ecrit un secteur DRIVE, PISTE, SECTEU, RWBUF
+XSAY   = $8F                                   ; Ecrit secteur Y, piste A, DRIVE, RWBUF
+XPRSEC = $A1                                   ; Lit secteur DRIVE, PISTE, SECTEU, RWBUF
 
 ; Buffer
 XTSTBU = $56
