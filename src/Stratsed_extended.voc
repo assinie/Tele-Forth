@@ -551,7 +551,7 @@ DOLLOAD:
         .word   DOCOL
         .word   ZERO
         .word   LIT
-        .word   RAM_START+27772
+        .word   $8080
         .word   SALOSTORE
         .word   LIT
         .word   XLOAD
@@ -565,5 +565,5 @@ DOLLOAD:
 #endif
 
 #else
-#error "*** Fichier Stratsed_minimal.voc déjà inclus!"
+#error "*** Fichier Stratsed_extended.voc déjà inclus!"
 #endif
