@@ -254,7 +254,7 @@ fin
 
 ; ----------------------------------------------------------------------------
 ; : SetUSB 15 0341 C! 6 0340 C! 0340 C@ ;
-; ( -- b )
+; ( -- )
 SetUSB_nfa:
         .byte $86
         .byte "SetUS","B"+$80
@@ -450,7 +450,7 @@ FileOpen:
 #ifndef CH376_OLD
 ;	0517 0548 C@ 1- 1 AND 0260 * 0B40 + 0D CMOVE ;
         .word LIT
-        .word $517
+        .word $0517
 	.word LIT
 	.word $0548
 	.word CAT
@@ -471,7 +471,8 @@ FileOpen:
 
 -last_ch376_word_nfa = FileOpen_nfa
 ; ----------------------------------------------------------------------------
-#ifdef WITH_AUTOSTART_SUPPORT
+;#ifdef WITH_AUTOSTART_SUPPORT
+#echo "Ajout du mot FileClose [CH376]"
 ; : FileClose 36 0341 C! 0340 C! GetStatus ;
 ;
 FileClose_nfa
@@ -492,7 +493,7 @@ FileClose:
         .word SEMIS
 
 -last_ch376_word_nfa = FileClose_nfa
-#endif
+;#endif
 
 ; ----------------------------------------------------------------------------
 ; ( ad bloc -- 1 | ad 0 )
@@ -606,6 +607,7 @@ ZZend:
 -last_ch376_word_nfa = write_nfa
 
 #ifdef CH376_Extended
+#echo "Ajout des mots GetVersion, ByteRdGo, ReadUSB [CH376]"
 ; ----------------------------------------------------------------------------
 ; 1 ch376: GetVersion
 ;
@@ -655,7 +657,7 @@ ReadUSB_nfa:
 
 ; ----------------------------------------------------------------------------
 ; Pour support STARTUP / AUTOSTART
-#ifdef WITH_AUTOSTART_SUPPORT
+; #ifdef WITH_AUTOSTART_SUPPORT
 ; : FILENAME COUNT DUP 0C > 89 ?ERROR 0518 SWAP OVER 0D BLANKS CMOVE ;
 ;
 FILENAME_nfa:
@@ -686,6 +688,24 @@ FILENAME:
 
 -last_forth_word_nfa = FILENAME_nfa
 
+;
+; Faire un FILENAME2 sans le COUNT pour pouvoir utiliser argv?
+; ou supprimer le COUNT de FILENAME et ajouter un COUNT avant les appels à FILENAME?
+;
+;FILENAME2_nfa:
+;	.byte $89
+;	.byte "FILENAME","2"+$80
+;	.word last_forth_word_nfa
+;FILENAME:
+;.(
+;        .word DOCOL
+;        .word BRANCH
+;        .word FILENAME+4
+;        .word SEMIS
+;.)
+;-last_forth_word_nfa = FILENAME2_nfa
+
+
 ; ----------------------------------------------------------------------------
 ; : ?FILE FILENAME CH376 SetFilename2 FileOpen 14 = IF 0 FileClose
 ;  DROP 1 ELSE 0 THEN ;
@@ -712,14 +732,88 @@ QFILE:
         .word BRANCH
         .word ZZend
 ZZelse:
-         .word ZERO
+        .word ZERO
 ZZend:
         .word SEMIS
 .)
 
-
-
 -last_forth_word_nfa = QFILE_nfa
+
+
+; ----------------------------------------------------------------------------
+;( argc -- adr len )
+;( argc -- adr 0 ) si argc > nombre d'arguments
+;
+;/!\ Pas de vérification de la validité de argc (doit être >=0)
+;: argv
+;	1+ >R (Sauvegarde argc )
+;
+;	58F ( 590 1 - ) 0 0 1
+;	R> 0
+;	DO
+;		DUP 0= IF ( Sortie prématurée, plus de paramètres )
+;				LEAVE ( -- 59A 0 1 0 )
+;			ELSE
+;				SWAP DROP + + BL ENCLOSE
+;			THEN
+;	LOOP
+;	IF >R + R> ELSE ( -- 59A 0 1 ) DROP  THEN ;
+;
+#ifdef WITH_ARGV
+#echo "Ajout du mot ARGV";
+ARGV_nfa:
+        .byte   $84
+        .byte   "ARG","V"+$80
+; ----------------------------------------------------------------------------
+        .word   last_forth_word_nfa
+ARGV:
+.(
+        .word DOCOL
+        .word ONEP
+        .word TOR
+        .word LIT
+        .word $058F
+        .word ZERO
+        .word ZERO
+        .word ONE
+        .word RFROM
+        .word ZERO
+        .word PDO
+L16A6
+        .word DUP
+        .word ZEQUAL
+        .word ZBRANCH
+        .word L16B4
+        .word LEAVE
+        .word BRANCH
+        .word L16C0
+L16B4
+        .word SWAP
+        .word DROP
+        .word PLUS
+        .word PLUS
+        .word BL
+        .word ENCLOSE
+L16C0
+        .word PLOOP
+        .word L16A6
+        .word ZBRANCH
+        .word L16D2
+        .word TOR
+        .word PLUS
+        .word RFROM
+        .word BRANCH
+        .word L16D4
+L16D2
+        .word DROP
+L16D4
+        .word SEMIS
+
+.)
+
+-last_forth_word_nfa = ARGV_nfa
+
+#endif
 
 ; ----------------------------------------------------------------------------
 #echo "Ajout du mot STARTUP avec suppport CH376";
@@ -730,6 +824,7 @@ STARTUP_nfa:
 ; ----------------------------------------------------------------------------
         .word   last_forth_word_nfa
 STARTUP:
+.(
         .word   DOCOL
         .word   LIT
         .word   $60
@@ -806,6 +901,26 @@ LEA81:
 	.word ZBRANCH
 	.word LEAFF
 
+#ifdef WITH_ARGV
+;        2 argv DUP IF DUP HERE C! HERE 1+ SWAP CMOVE HERE ELSE 2DROP LIT" STARTUP.DAT" THEN ;
+        .word TWO
+        .word ARGV
+        .word DUP
+        .word ZBRANCH
+        .word Largv_else
+        .word DUP
+        .word HERE
+        .word CSTORE
+        .word HERE
+        .word ONEP
+        .word SWAP
+        .word CMOVE
+        .word HERE
+        .word BRANCH
+        .word Largv_endif
+Largv_else:
+        .word TWODROP
+#endif
         .word   PLITQ
 ; ----------------------------------------------------------------------------
 .(
@@ -815,6 +930,7 @@ LEA81:
         end=*
 .)
 ; ----------------------------------------------------------------------------
+Largv_endif:
         .word   QFILE
         .word   ZBRANCH
         .word   LEAFF
@@ -840,15 +956,19 @@ LEAFF:
 ;        .word   $8A
 ;        .word   MESSAGE
         .word   SEMIS
+.)
 
 -last_forth_word_nfa = STARTUP_nfa
 
+;#ifdef CH376_Extended
+#ifdef WITH_AUTOSTART_SUPPORT
+#echo "Ajout des mots (DOS), DOS [CH376]"
 ; ----------------------------------------------------------------------------
 ; : (DOS) DUP XOPEN = IF DROP FileOpen 14 = 0= 81
 ;       ELSE DROP 1 1C ;
 ;
 ; Si on veut une compatibilité avec (DOS) du Stratsed:
-; : (DOS) DUP XOPEN FI DROP FileOpen 14 = 1 *
+; : (DOS) DUP XOPEN IF DROP FileOpen 14 = 1 *
 ;       ELSE DROP 8 ;
 ;
 ; /?\ A définir comme DEFER (DOS)
@@ -934,6 +1054,192 @@ ZZend:
 
 -last_forth_word_nfa = RSLW_nfa
 
+; ------------------------------------------------------------------------------
+;
+; ------------------------------------------------------------------------------
+;---------------------------------------------------------------------------
+;
+; Codes d'erreur du CH376
+;
+;---------------------------------------------------------------------------
+#define SUCCESS $12
+#define INT_SUCCESS $14
+#define INT_DISK_READ $1D
+#define INT_DISK_WRITE $1E
+#define ABORT $5F
+
+XLOAD_nfa:
+        .byte $85
+        .byte "XLOA","D"+$80
+        .word last_ch376_word_nfa
+XLOAD:
+        .word *+2
+.(
+; Entrée: desalo contient l'adresse de chargement
+; Sortie: 0 -> Ok, 2-> Erreur ($80+2-> Erreur Disque)
+;         fisalo pointe sur l'octet suivant le dernier octet lu
+;
+; Faire 'FILENAME SetFilename FileOpen' avant l'appel à XLOAD
+;
+; : test BL WORD HERE FILENAME CH376 SetFilename FileOpen 014 = IF XLOAD ;
+; ou
+; : test BL WORD HERE ?FILE IF CH376 FileOpen DROP XLOAD ;
+;
+;  HEX 2000 052D ! test OVERLAY.SRC XLOAD
+;
+;
+;    jsr _SetFilename
+;    jsr _FileOpen
+;    cmp #$14
+;    bne Error
+    lda #$ff
+    tay
+    jsr SetByteRead
+    bne Error
+
+    lda desalo
+    sta $d0                                                                    ; /!\ Vérifier que $D0-D1 n'est pas utilisé
+    lda desalo+1
+    sta $d0+1
+
+ZZ0002
+    jsr ReadUSBData2
+    bcs ReadNextChunk
+    tya
+    adc $d0
+    sta $d0
+    bcc ReadNextChunk
+    inc $d0+1
+ReadNextChunk
+    jsr ByteRdGo
+    beq ZZ0002
+    jsr _FileClose
+    lda $d0
+    sta fisalo
+    lda $d1
+    sta fisalo+1
+    lda #$00
+    jmp PUSH0A
+
+ReadUSBData2:
+    stx _XSAVE
+    sec
+    lda #$27
+    sta ch376_command
+    ldx ch376_data
+    beq ZZZ002
+    ldy #$00
+ZZZ003
+    lda ch376_data
+    sta ($d0),y
+    iny
+    dex
+    bne ZZZ003
+    clc
+ZZZ002
+    ldx _XSAVE
+    rts
+
+Error
+    lda #$02
+    jmp PUSH0A
+
+-last_ch376_word_nfa = XLOAD_nfa
+
+
+; ==============================================================================
+
+;---------------------------------------------------------------------------
+; 28 Octets
+;---------------------------------------------------------------------------
+_SetFilename
+		; Copie la longueur de la chaine dans X
+        stx _XSAVE
+		tax
+
+		lda #$2f
+		sta ch376_command
+;		sta ch376_data		; Pour ouverture de '/'
+		ldy #$ff
+ZZZ004
+		iny
+;		lda (bufnom+1),y
+		lda bufnom+1,y
+		sta ch376_data
+;		dex
+		bne ZZZ004
+
+		; Ajoute le '\0' final
+		lda #$00
+		sta ch376_data
+        ldx _XSAVE
+		rts
+
+;---------------------------------------------------------------------------
+; 32 Octets
+;---------------------------------------------------------------------------
+_Mount
+	LDA #$31
+	.byte $2c
+
+_FileOpen
+	LDA #$32
+	.byte $2c
+
+_FileCreate
+	LDA #$34
+
+CH376_Cmd
+	STA ch376_command
+
+CH376_CmdWait
+        stx _XSAVE
+	JSR _WaitResponse
+	ldx _XSAVE
+	CMP #INT_SUCCESS
+	RTS
+;---------------------------------------------------------------------------
+; ACC: Flag mise à jour (0: Non, 1: Oui)
+_FileClose
+	LDY #$36
+	STY ch376_command
+	STA ch376_data
+
+	CLC									; Saut inconditionel
+	BCC CH376_CmdWait
+
+
+;---------------------------------------------------------------------------
+; 28 Octets
+;---------------------------------------------------------------------------
+SetByteRead
+	PHA
+	LDA #$3A
+	.byte $2c
+
+SetByteWrite
+	lda #$3C
+
+CH376_Cmd2
+	STA ch376_command
+	PLA
+	STA ch376_data
+	STY ch376_data
+
+CH376_CmdWait2
+        stx _XSAVE
+	JSR _WaitResponse
+	ldx _XSAVE
+	CMP #INT_DISK_READ
+	RTS
+;---------------------------------------------------------------------------
+ByteRdGo
+	LDA #$3B
+	STA ch376_command
+	BNE CH376_CmdWait2
+
+.)
+;---------------------------------------------------------------------------
 #else
 #echo "Ajout entête du vocabulaire CH376"
 
@@ -945,3 +1251,4 @@ CH376_voc = RAM_START-2+(*-DictInitTable)
 #endif
 
 #endif
+
