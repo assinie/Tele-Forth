@@ -8,12 +8,34 @@
 
     * = $c000
 #include "TeleForth.inc"
+#define TELEFORTH_20
+;#define TELEFORTH_12
+
+; ----------------------------------------------------------------------------
+; Version Teleforth 2.0
+; ----------------------------------------------------------------------------
+#ifdef TELEFORTH_20
+; #echo "Compilation TeleForth v2.0 (ch376)"
+
+#define VERSION_MAJ 2
+#define VERSION_MIN 0
+#echo "Compilation TeleForth VERSION_MAJ.VERSION_MIN (ch376)"
+
+; Deplace les variables vasalo,... après PIO_addr pour éviter la collision avec
+; Orix (pour pouvoir récupérer le PATH courant)
+; A voir si ces variables sont nécessaires avec le ch376
+#define Page05_Base ($0568-$28)
 
 #define COMPACT
 #define WITHOUT_FIGFORTH_BUG
 
+; Décompilateur
 ;#define WITH_DECOMPILER
+
+; Extensions sonores
 ;#define WITH_SOUNDS_VOC
+
+; Extensions graphiques
 ;#define WITH_GRAFX_VOC
 
 ; SCRW et CURSOR nécessaires pour TERMINAL
@@ -22,30 +44,179 @@
 ;#define WITH_CLOCK
 ;#define WITH_WAIT
 
+; Support disque (Telestrat)
 ; R/W nécessaire pour FLUSH et BLOCK
 ;#define WITH_STRATSED_MINIMAL
+; USING et XFILE nécessaires pour SCRMOVE et SCRCOPY
+; DOLLOAD et DOLSAVE nécessaires pour OVERLAYS et EXTERNAL
+; SALOSTORE nécessaire pour IOS_SERIAL et IOS_MINITEL
 ;#define WITH_STRATSED
 
+; Support disque (CH376)
+#define WITH_CH376
+; Necessaire pour support AUTOSTART
+;#define CH376_Extended
+#define WITH_ARGV
+
+; Support des structures de contrôle
+#define WITH_ALL_TESTS
+;#define WITH_IF_THEN_ELSE
+;#define WITH_BEGIN_AGAIN
+;#define WITH_BEGIN_UNTIL
+;#define WITH_BEGIN_WHILE
+;#define WITH_DO_LOOP
+;#define WITH_DO_PLOOP
+;#define WITH_CASE_OF_ENDCASE
+
+#define WITH_PSEUDO_IF
+
 #define WITH_AUTOSTART_SUPPORT
+#define AUTOSTART_FILE "STARTUP.DAT"
+
+; Gestion des écrans
+;#define WITH_QLOADING
+#define WITH_FOLLOW
+;#define WITH_BACKSLASH
+;#define WITH_CSLL
+;#define WITH_PLINE
+;#define WITH_DOTLINE
+;#define WITH_INDEX
+;#define WITH_LIST
+;#define WITH_TRIAD
+;#define WITH_THRU
+#define WITH_LOAD
+
 ;#define WITH_OVERLAYS_SUPPORT
 ;#define WITH_EXTERNAL_HELPERS
 
 ; OPCH, QTERM, CKEY et CEMIT nécessaires pour TERMINAL
 #define WITH_IOS_VOC
-
 ;#define WITH_IOS_PRINTER
 ;#define WITH_IOS_SERIAL
 ;#define WITH_IOS_MINITEL
-;#define WITH_TEXT_LINE
+
+;#define WITH_INPUT
+;#define WITH_OUTPUT
+
+; Support editeur standard
 ;#define WITH_EDITOR_VOC
-;#define WITH_SCRMOVE_SCRCOPY
+;#define WITH_WHERE
+;#define WITH_EDITOR_TEXT_LINE
+;#define WITH_EDITOR_SCRMOVE_SCRCOPY
+
+; Jeu de la vie (démonstration)
 ;#define WITH_LIFE_VOC
 ;#define WITH_LIFE_DEMO
-;#define WITH_ROMend
 
-#define WITH_CH376
+; Gestion du dictionnaire
+#define WITH_FORGET
+#define WITH_VLIST
+#define WITH_VOC_LIST
+
+;#define WITH_ROMend
+#endif
+
+; ----------------------------------------------------------------------------
+; Version Teleforth 1.2
+; ----------------------------------------------------------------------------
+#ifdef TELEFORTH_12
+;#echo "Compilation TeleForth v1.2 (TeleStrat)"
+
+#define VERSION_MAJ 1
+#define VERSION_MIN 2
+#echo "Compilation TeleForth VERSION_MAJ.VERSION_MIN (TeleStrat)"
+
+#define Page05_Base $0500
+
+#undef COMPACT
+#undef WITHOUT_FIGFORTH_BUG
+
+; Décompilateur
+#define WITH_DECOMPILER
+
+; Extensions sonores
+#define WITH_SOUNDS_VOC
+
+; Extensions graphiques
+#define WITH_GRAFX_VOC
+
+; SCRW et CURSOR nécessaires pour TERMINAL
+#define WITH_WINDOWS_VOC
+
+#define WITH_CLOCK
+#define WITH_WAIT
+
+; Support disque (Telestrat)
+; R/W nécessaire pour FLUSH et BLOCK
+#define WITH_STRATSED_MINIMAL
+; USING et XFILE nécessaires pour SCRMOVE et SCRCOPY
+; DOLLOAD et DOLSAVE nécessaires pour OVERLAYS et EXTERNAL
+; SALOSTORE nécessaire pour IOS_SERIAL et IOS_MINITEL
+#define WITH_STRATSED
+
+; Support disque (CH376)
+#undef WITH_CH376
 ; Necessaire pour support AUTOSTART
-#define CH376_Extended
+#undef CH376_Extended
+
+; Support des structures de contrôle
+#define WITH_ALL_TESTS
+;#define WITH_IF_THEN_ELSE
+;#define WITH_BEGIN_AGAIN
+;#define WITH_BEGIN_UNTIL
+;#define WITH_BEGIN_WHILE
+;#define WITH_DO_LOOP
+;#define WITH_DO_PLOOP
+;#define WITH_CASE_OF_ENDCASE
+
+#define WITH_PSEUDO_IF
+
+#define WITH_AUTOSTART_SUPPORT
+#define AUTOSTART_FILE "FORTH.DAT"
+
+; Gestion des écrans
+#define WITH_QLOADING
+#define WITH_FOLLOW
+#define WITH_BACKSLASH
+#define WITH_CSLL
+#define WITH_PLINE
+#define WITH_DOTLINE
+#define WITH_INDEX
+#define WITH_LIST
+#define WITH_TRIAD
+#define WITH_THRU
+#define WITH_LOAD
+
+#define WITH_OVERLAYS_SUPPORT
+#define WITH_EXTERNAL_HELPERS
+
+; OPCH, QTERM, CKEY et CEMIT nécessaires pour TERMINAL
+#define WITH_IOS_VOC
+#define WITH_IOS_PRINTER
+#define WITH_IOS_SERIAL
+#define WITH_IOS_MINITEL
+
+#define WITH_INPUT
+#define WITH_OUTPUT
+
+; Support editeur standard
+#define WITH_EDITOR_VOC
+;#define WITH_WHERE
+#define WITH_EDITOR_TEXT_LINE
+#define WITH_EDITOR_SCRMOVE_SCRCOPY
+
+; Jeu de la vie (démonstration)
+#define WITH_LIFE_VOC
+#define WITH_LIFE_DEMO
+
+; Gestion du dictionnaire
+#define WITH_FORGET
+#define WITH_VLIST
+#define WITH_VOC_LIST
+
+#define WITH_ROMend
+
+#endif
 
 ; ----------------------------------------------------------------------------
 
@@ -71,6 +242,7 @@
 
 #ifdef WITH_CLOCK
 #define WITH_WINDOWS_VOC
+#define NEED_MON
 #endif
 
 #ifdef WITH_IOS_PRINTER
@@ -89,12 +261,12 @@
 #define WITH_IOS_VOC
 #endif
 
-#ifdef WITH_SCRMOVE_SCRCOPY
+#ifdef WITH_EDITOR_SCRMOVE_SCRCOPY
 #define WITH_EDITOR
 #endif
 
 #ifdef WITH_EDITOR_VOC
-#define WITH_TEXT_LINE
+#define WITH_EDITOR_TEXT_LINE
 #endif
 
 #ifdef WITH_LIFE_DEMO
@@ -104,6 +276,241 @@
 #ifdef WITH_LIFE_VOC
 #define WITH_GRAFX_VOC
 #define WITH_WAIT
+#define WITH_OVERLAYS_SUPPORT
+#endif
+
+; --------------------------
+
+; Structures de contrôle
+
+#ifdef WITH_ALL_TESTS
+#define WITH_CONTROL_FLOW
+
+#define WITH_IF_THEN_ELSE
+#define WITH_BEGIN_AGAIN
+#define WITH_BEGIN_UNTIL
+#define WITH_BEGIN_WHILE
+#define WITH_DO_LOOP
+#define WITH_DO_PLOOP
+#define WITH_CASE_OF_ENDCASE
+#endif
+
+#ifdef WITH_IF_THEN_ELSE
+#define WITH_CONTROL_FLOW
+#define NEED_MRKFROM
+#endif
+
+#ifdef WITH_BEGIN_AGAIN
+#define WITH_CONTROL_FLOW
+#define NEED_MRKTO
+#define NEED_BEGIN
+#define NEED_AGAIN
+#endif
+
+#ifdef WITH_BEGIN_UNTIL
+#define WITH_CONTROL_FLOW
+#define NEED_MRKTO
+#define NEED_BEGIN
+#define NEED_UNTIL
+#endif
+
+#ifdef WITH_BEGIN_WHILE
+#define WITH_CONTROL_FLOW
+#define NEED_MRKFROM
+#define NEED_MRKTO
+#define NEED_BEGIN
+#define NEED_WHILE
+#define NEED_REPEAT
+#endif
+
+#ifdef WITH_DO_LOOP
+#define WITH_CONTROL_FLOW
+#define NEED_MRKTO
+#define NEED_DO
+#define NEED_LOOP
+#endif
+
+#ifdef WITH_DO_PLOOP
+#define WITH_CONTROL_FLOW
+#define NEED_MRKTO
+#define NEED_DO
+#define NEED_PLOOP
+#endif
+
+#ifdef WITH_CASE_OF_ENDCASE
+#define WITH_CONTROL_FLOW
+#define NEED_MRKFROM
+#endif
+
+
+; --------------------------
+#define NEED_ABORT
+
+
+#ifdef NEED_ABORT
+#define NEED_PABORT
+#endif
+
+#ifdef WITH_CH376
+#define NEED_LOAD
+#endif
+
+#ifdef WITH_STRATSED
+#define NEED_LOAD
+#endif
+
+#ifdef WITH_CSLL
+#define NEED_CSLL
+#endif
+
+#ifdef WITH_QLOADING
+#define NEED_QLOADING
+#endif
+
+#ifdef WITH_LOAD
+#define NEED_LOAD
+#endif
+
+
+#ifndef WITH_EDITOR_VOC
+;#undef WITH_INDEX
+;#undef WITH_TRIAD
+#undef WITH_EDITOR_SCRMOVE_SCRCOPY
+#undef WITH_EDITOR_TEXT_LINE
+#endif
+
+#ifdef WITH_EDITOR_VOC
+#define NEED_CSLL
+#define WITH_PLINE
+#define WITH_LIST
+#define WITH_DOTLINE
+#define WITH_WHERE
+#endif
+
+#ifdef WITH_FOLLOW
+#define NEED_QLOADING
+#endif
+
+#ifdef WITH_BACKSLASH
+#define NEED_QLOADING
+#define NEED_CSLL
+#endif
+
+#ifdef WITH_INDEX
+#define WITH_DOTLINE
+#define NEED_QTERMSTOP
+#endif
+
+#ifdef WITH_TRIAD
+#define WITH_LIST
+#define NEED_QTERMSTOP
+#endif
+
+#ifdef WITH_LIST
+#define WITH_DOTLINE
+#define NEED_QTERMSTOP
+#endif
+
+#ifdef WITH_VLIST
+#define NEED_QTERMSTOP
+#endif
+
+#ifdef WITH_DOTLINE
+#define WITH_PLINE
+#endif
+
+#ifdef WITH_PLINE
+#define NEED_CSLL
+#endif
+
+#ifdef WITH_CLOCK
+#define NEED_AYX
+#endif
+
+#ifdef WITH_GRAFX_VOC
+#define NEED_AYX
+#endif
+
+#ifdef WITH_IOS_VOC
+#define NEED_AYX
+#endif
+
+#ifdef WITH_SOUNDS_VOC
+#define NEED_AYX
+#endif
+
+#ifdef WITH_STRATSED
+#define NEED_AYX
+#endif
+
+#ifdef WITH_WINDOWS_VOC
+#define NEED_AYX
+#endif
+
+
+#ifdef WITH_INPUT
+#define NEED_PIO
+#endif
+
+#ifdef WITH_OUTPUT
+#define NEED_PIO
+#endif
+
+#ifdef NEED_PABORT
+#define NEED_PIO
+#endif
+
+#ifdef NEED_QTERMSTOP
+#define NEED_PIO
+#endif
+
+
+#ifdef WITH_GRAFX_VOC
+#define NEED_MON
+#endif
+
+#ifdef WITH_IOS_VOC
+#define NEED_MON
+#endif
+
+#ifdef WITH_SOUNDS_VOC
+#define NEED_MON
+#endif
+
+#ifdef WITH_STRATSED
+#define NEED_MON
+#define NEED_PIO
+#endif
+
+#ifdef WITH_WINDOWS_VOC
+#define NEED_MON
+#endif
+
+
+#ifdef WITH_IOSExt_VOC
+#define NEED_MONCOL
+#define NEED_PIO
+#endif
+
+#ifdef WITH_GRAFX_VOC
+#define NEED_MONCOL
+#endif
+
+#ifdef WITH_SOUNDS_VOC
+#define NEED_MONCOL
+#endif
+
+
+#ifdef WITH_GRAFX_VOC
+#define NEED_HRSCOL
+#endif
+
+#ifdef WITH_SOUNDS_VOC
+#define NEED_HRSCOL
+#endif
+
+#ifdef WITH_OVERLAYS_SUPPORT
+#define NEED_HIMEM
 #endif
 
 ; ----------------------------------------------------------------------------
@@ -114,6 +521,7 @@ hrs1            = $004D
 hrs3            = $0051
 hrsfb           = $0057
 BUFP            = $0080                        ; Pointeur sur tampon Forth pour lecture/écriture
+
 STACK           = $008C                        ; Pile des données (50 octets)
 N               = $00C0
 IP              = $00C8
@@ -121,45 +529,51 @@ W               = $00CB
 UP              = $00CD
 _XSAVE          = $00CF                        ; Ajout de '_' pour ne pas confondre avec l'appel Stratsed XSAVE
 _TIB_           = $0100
-tabdrv          = $0208
-drvdef          = $020C
-flgtel          = $020D
-timeS           = $0211
-timeM           = $0212
-timeH           = $0213
-scrX            = $0220
-scrY            = $0224
-hrspat          = $02AA
-vnmi            = $02F4
-virq            = $02FA
-vaplic          = $02FD
+
+tabdrv          = $0208                        ; Activation des lecteurs (0-> non c0nnecté, sinon nb pistes (b7=1-> double face))
+drvdef          = $020C                        ; Numéro (0-3) du lecteur par défaut
+flgtel          = $020D                        ; b7:1-> haute résolution, b6:1-> mode minitel, b5:1-> mode degrés (0->radian), b2:1->BONJOUR.COM existe, b1:1->imprimante CENTRONICS détectée, b0:1-> STRATSED absent
+timeS           = $0211                        ; Horloge: secondes
+timeM           = $0212                        ; Horloge: minutes
+timeH           = $0213                        ; Horloge: heures
+scrX            = $0220                        ; Coordonnée X
+scrY            = $0224                        ; Coordonnée Y
+hrspat          = $02AA                        ; Motif
+vnmi            = $02F4                        ; Vecteur NMI (n° de banque, adresse)
+virq            = $02FA                        ; Vecteur IRQ
+vaplic          = $02FD                        ; N° banque, adresse TELEMATIC->LANGAGE
 v2dra           = $0321
 Exbnk           = $040C
 vexbnk          = $0414
 bnkcib          = $0417
-drive           = $0500
-piste           = $0501
-secteu          = $0502
+drive           = $0500                        ; N° de drive (0-3)
+piste           = $0501                        ; N° de piste (b7=1-> face B)
+secteu          = $0502                        ; N° de secteur
 rwbuf           = $0503                        ; Adresse tampon DOS pour lecture/écriture
-errnb           = $0512
+errnb           = $0512                        ; Code erreur: 00->Ok, 01->Fichier inexistant, 02->I/O, 03->Fichier existant, 04->disque plein, 05->disquette protégée, 06->erreur de type de fichier, 07->Format inconnu, 11->Fichier déjà ouvert, 12->Fichier fermé, 13->Fin de fichier (séquentiel), 14->mauvais type d'expression, 15->mauvais n° de fiche
 saves           = $0513
-bufnom          = $0517
-vasalo0         = $0528
-ftype           = $052C
-desalo          = $052D
-fisalo          = $052F
-tampfc          = $0542
-bitmfc          = $0544
-ficnum          = $0548
-nbfic           = $0549
-xfield          = $054C
+bufnom          = $0517                        ; N° de lecteur + nom du fichier sur 12 caractères ( ORIX: $0517-$0524)
+
+                                               ; Orix: ORIX_PATH_CURRENT (ORIX_MAX_PATH_LENGTH:=MAX_LENGTH_OF_FILES*PATH_CURRENT_MAX_LEVEL+PATH_CURRENT_MAX_LEVEL)
+                                               ; $0525-$0525+9*4+4 -> $0525-$054C
+vasalo0         = Page05_Base +$28             ; Flag lecture/écriture
+ftype           = Page05_Base +$2C             ; Type du fichier
+desalo          = Page05_Base +$2D             ; Adresse de début du fichier à écrire
+fisalo          = Page05_Base +$2F             ; Adresse de fin du fichier à écrire
+tampfc          = Page05_Base +$42             ; Adresse de début des tampons fichier (initialisé à DOSBUFFERS par STARTUP)
+bitmfc          = Page05_Base +$44             ; (word) BitMap des tampons logiques (même convention que la BitMap disquette, 0->occupé, 1->libre))
+ficnum          = Page05_Base +$48             ; Numéro logique du fichier (1 ou 2)
+nbfic           = Page05_Base +$49             ; Nombre de fichiers autorisés par FILE (2)
+xfield          = Page05_Base +$4C             ; Pour fichier accès direct: xfield=n° de banque, xfield+1=adresse
+
 CallTel         = $0560                        ; Routine d'appel d'une fonction Telemon. Initialisé à: 00 00 60 00 par (ABORT)
 AYX_addr        = $0563                        ; Utilisé pour le passage des registres A,X,Y pour les appels MON
 PIO_addr        = $0566                        ; Utilisé pour le passage du registre P pour les appels MON
+
 _UAREA_         = $0800                        ; User Area (ex. CURRENT := $0822)
-DOSBUFFERS      = $0840                        ; Tampons DOS pour 2 fichiers
-_FIRST          = $1000                        ; Tampon pour 1 écran (FIRST)
-RAM_START       = _FIRST+2+$0400+2             ; Zone pour le dictionnaire (LIMIT) - 1er mot utilisateur à partir de $143C
+DOSBUFFERS      = $0840                        ; Tampons DOS pour 2 fichiers (taille: $0300+$0260*nbfic -> $07C0)
+_FIRST          = $1000                        ; Tampon pour 1 écran (FIRST) de $0400 octets + octets de contrôles -- $1000 := DOSBUFFERS+$0300+$0260*2
+RAM_START       = _FIRST+2+$0400+2             ; Zone pour le dictionnaire (LIMIT) - 1er mot utilisateur à partir de $143C := $1000+$0404 + $38 (longueur du dictionnaire en RAM)
 SCRTXT          = $BB80                        ; Adresse de base de l'écran TEXT
 
 ;last_voc_link   = $0000
@@ -1814,7 +2228,7 @@ TWOSWAP_nfa:
         .byte   $D0
 ; ----------------------------------------------------------------------------
         .word   ROT_nfa
-LC771:
+TWOSWAP:
         .word   DOCOL
         .word   ROT
         .word   TOR
@@ -3536,7 +3950,7 @@ backslash_C_nfa:
         .byte   "\"
         .byte   $C3
 ; ----------------------------------------------------------------------------
-        .word   DLITERAL_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   DUP
         .word   UDOT
@@ -3989,12 +4403,19 @@ MSG:
 
 
 
+#ifndef WITH_CH376
         .byte   $0F,$20
-        .byte   "TELE-FORTH V1.2 - Thierry "
+        .byte   "TELE-FORTH V1.2 - Thierry BESTEL"
+#else
+.(
+#define MSG015 "TELE-FORTH V",VERSION_MAJ+$30,".",VERSION_MIN+$30," - Christian Lardiere"
+        .byte $0F
+        .byte end-*-1
+        .byte MSG015
+        end=*
+.)
+#endif
 
-
-
-        .byte   "BESTEL"
         .byte   $11,$17
         .byte   "en definition seulement"
 
@@ -4065,19 +4486,47 @@ MSG:
         .byte   $8A,$0E
         .byte   "Lecteur absent"
 
-        .byte   $FE
-        .byte   "+TELE-FORTH V1.2"
-
-        .byte   $0D,$0A
-        .byte   "genere avec TELE-ASS V1.0a"
-
+#ifndef WITH_CH376
+        .byte   $FE,$2B
+        .byte   "TELE-FORTH V1.2",$0D,$0A,"genere avec TELE-ASS V1.0a"
 
 
         .byte   $FF,$32
-        .byte   "Base sur TELE-FORTH V1.1 "
+        .byte   "Base sur TELE-FORTH V1.1 ",$0D,$0A,"de Christophe LAVARENNE"
+#else
+.(
+#define MSG145 "Repertoire inexistant"
+        .byte $91
+        .byte end-*-1
+        .byte MSG145
+        end=*
+.)
+.(
+#define MSG147 "Repertoire existant"
+        .byte $93
+        .byte end-*-1
+        .byte MSG147
+        end=*
+.)
 
-        .byte   $0D,$0A
-        .byte   "de Christophe LAVARENNE"
+.(
+#define MSG254 "TELE-FORTH V",VERSION_MAJ+$30,".",VERSION_MIN+$30,$0D,$0A,"genere avec xa v2.3.8"
+        .byte $FE
+        .byte end-*-1
+        .byte MSG254
+        end=*
+.)
+.(
+#define MSG255 "Base sur TELE-FORTH V1.2",$0D,$0A,"de Thierry Bestel"
+        .byte $FF
+        .byte end-*-1
+        .byte MSG255
+        end=*
+
+.)
+#endif
+
+
 
 #ifndef COMPACT
 .dsb $D524-*,$00
@@ -4388,7 +4837,8 @@ LD6D4:
 ; ----------------------------------------------------------------------------
         .word   MESSAGE
         .word   SPstore
-#ifdef WITH_EDITOR_VOC
+#ifdef WITH_WHERE
+#echo "Ajout du support WHERE pour ERROR"
         .word   BLK
         .word   AT
         .word   DDUP
@@ -5120,14 +5570,19 @@ EMIT:
 ; Vérifier si byte ou addr
 EMIT_pfa:
         .word   EMIT_defer
+
+-last_forth_word_nfa = EMIT_nfa
+
 ; ----------------------------------------------------------------------------
 ; (ABORT)_nfa
+#ifdef NEED_PABORT
+#echo "Ajout du mot (ABORT)"
 PABORT_nfa:
         .byte   $87
         .byte   "(ABORT"
         .byte   $A9
 ; ----------------------------------------------------------------------------
-        .word   EMIT_nfa
+        .word   last_forth_word_nfa
 ; (ABORT)
 PABORT:
         .word   DOCOL
@@ -5148,7 +5603,7 @@ PABORT:
 
 ; ----------------------------------------------------------------------------
         .word   LIT
-        .word   $01
+        .word   VERSION_MAJ
         .word   LIT
         .word   $30
         .word   PLUS
@@ -5159,7 +5614,7 @@ PABORT:
         .byte   "."
 ; ----------------------------------------------------------------------------
         .word   LIT
-        .word   $02
+        .word   VERSION_MIN
         .word   LIT
         .word   $30
         .word   PLUS
@@ -5180,13 +5635,17 @@ PABORT:
         .word   STARTUP
         .word   QUIT
         .word   SEMIS
+
+-last_forth_word_nfa = PABORT_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
 COLD_nfa:
         .byte   $84
         .byte   "COL"
         .byte   $C4
 ; ----------------------------------------------------------------------------
-        .word   PABORT_nfa
+        .word   last_forth_word_nfa
 COLD:
         .word   DOCOL
 #ifdef WITH_ROMend
@@ -5238,350 +5697,29 @@ WARM:
         .word   EMPTYBUFFERS
         .word   ABORT
         .word   SEMIS
-; ----------------------------------------------------------------------------
-; MRK>_nfa
-MRKFROM_nfa:
-        .byte   $84
-        .byte   "MRK"
-        .byte   $BE
-; ----------------------------------------------------------------------------
-        .word   WARM_nfa
-; MRK>
-MRKFROM:
-        .word   DOCOL
-        .word   HERE
-        .word   ZERO
-        .word   COMMA
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; MRK<_nfa
-MRKTO_nfa:
-        .byte   $84
-        .byte   "MRK"
-        .byte   $BC
-; ----------------------------------------------------------------------------
-        .word   MRKFROM_nfa
-; MRK<
-MRKTO:
-        .word   DOCOL
-        .word   HERE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; RES>_nfa
-RESFROM_nfa:
-        .byte   $84
-        .byte   "RES"
-        .byte   $BE
-; ----------------------------------------------------------------------------
-        .word   MRKTO_nfa
-; RES>
-RESFROM:
-        .word   DOCOL
-        .word   HERE
-        .word   SWAP
-        .word   STORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; RES<_nfa
-RESTO_nfa:
-        .byte   $84
-        .byte   "RES"
-        .byte   $BC
-; ----------------------------------------------------------------------------
-        .word   RESFROM_nfa
-; RES<
-RESTO:
-        .word   DOCOL
-        .word   COMMA
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-IF_nfa:
-        .byte   $C2
-        .byte   "I"
-        .byte   $C6
-; ----------------------------------------------------------------------------
-        .word   RESTO_nfa
-        .word   DOCOL
-        .word   QCOMP
-        .word   COMPILE
-        .word   ZBRANCH
-        .word   MRKFROM
-        .word   ONE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-ELSE_nfa:
-        .byte   $C4
-        .byte   "ELS"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   IF_nfa
-        .word   DOCOL
-        .word   ONE
-        .word   QPAIRS
-        .word   COMPILE
-        .word   BRANCH
-        .word   MRKFROM
-        .word   SWAP
-        .word   RESFROM
-        .word   ONE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-ENDIF_nfa:
-        .byte   $C5
-        .byte   "ENDI"
-        .byte   $C6
-; ----------------------------------------------------------------------------
-        .word   ELSE_nfa
-ENDIF:
-        .word   DOCOL
-        .word   ONE
-        .word   QPAIRS
-        .word   RESFROM
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-BEGIN_nfa:
-        .byte   $C5
-        .byte   "BEGI"
-        .byte   $CE
-; ----------------------------------------------------------------------------
-        .word   ENDIF_nfa
-        .word   DOCOL
-        .word   QCOMP
-        .word   MRKTO
-        .word   TWO
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-AGAIN_nfa:
-        .byte   $C5
-        .byte   "AGAI"
-        .byte   $CE
-; ----------------------------------------------------------------------------
-        .word   BEGIN_nfa
-        .word   DOCOL
-        .word   TWO
-        .word   QPAIRS
-        .word   COMPILE
-        .word   BRANCH
-        .word   RESTO
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-UNTIL_nfa:
-        .byte   $C5
-        .byte   "UNTI"
-        .byte   $CC
-; ----------------------------------------------------------------------------
-        .word   AGAIN_nfa
-UNTIL:
-        .word   DOCOL
-        .word   TWO
-        .word   QPAIRS
-        .word   COMPILE
-        .word   ZBRANCH
-        .word   RESTO
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-WHILE_nfa:
-        .byte   $C5
-        .byte   "WHIL"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   UNTIL_nfa
-        .word   DOCOL
-        .word   TWO
-        .word   QPAIRS
-        .word   COMPILE
-        .word   ZBRANCH
-        .word   MRKFROM
-        .word   LIT
-        .word   $03
-        .word   SEMIS
+
+-last_forth_word_nfa = WARM_nfa
 
 ; ----------------------------------------------------------------------------
-REPEAT_nfa:
-        .byte   $C6
-        .byte   "REPEA"
-        .byte   $D4
+;                         Structures de contrôle
 ; ----------------------------------------------------------------------------
-        .word   WHILE_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $03
-        .word   QPAIRS
-        .word   COMPILE
-        .word   BRANCH
-        .word   SWAP
-        .word   RESTO
-        .word   RESFROM
-        .word   SEMIS
+; test IF action_vrai ELSE action_faux ENDIF|THEN
+; BEGIN boucle AGAIN
+; BEGIN boucle test UNTIL|END
+; BEGIN test WHILE boucle REPEAT
+; fin+1 ini DO boucle LOOP
+; fin+1 ini DO boucle increment +LOOP
+; CASE selecteur choix1 OF action1 ENDOF choix2 OF action2 ...action_defaut ENDCASE
 ; ----------------------------------------------------------------------------
-DO_nfa:
-        .byte   $C2
-        .byte   "D"
-        .byte   $CF
+#ifdef WITH_CONTROL_FLOW
+#include "Control.asm"
+#endif
+
 ; ----------------------------------------------------------------------------
-        .word   REPEAT_nfa
-        .word   DOCOL
-        .word   QCOMP
-        .word   COMPILE
-        .word   PDO
-        .word   MRKTO
-        .word   LIT
-        .word   $04
-        .word   SEMIS
+;           Instructions IF/THEN/ELSE utilisable en mode direct
 ; ----------------------------------------------------------------------------
-LOOP_nfa:
-        .byte   $C4
-        .byte   "LOO"
-        .byte   $D0
-; ----------------------------------------------------------------------------
-        .word   DO_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $04
-        .word   QPAIRS
-        .word   COMPILE
-        .word   PLOOP
-        .word   RESTO
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; +LOOP_nfa
-PlusLOOP_nfa:
-        .byte   $C5
-        .byte   "+LOO"
-        .byte   $D0
-; ----------------------------------------------------------------------------
-        .word   LOOP_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $04
-        .word   QPAIRS
-        .word   COMPILE
-        .word   PPLOOP
-        .word   RESTO
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-CASE_nfa:
-        .byte   $C4
-        .byte   "CAS"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   PlusLOOP_nfa
-        .word   DOCOL
-        .word   QCOMP
-        .word   CSP
-        .word   AT
-        .word   STORECSP
-        .word   LIT
-        .word   $05
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-OF_nfa:
-        .byte   $C2
-        .byte   "O"
-        .byte   $C6
-; ----------------------------------------------------------------------------
-        .word   CASE_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $05
-        .word   QPAIRS
-        .word   COMPILE
-        .word   POF
-        .word   MRKFROM
-        .word   LIT
-        .word   $06
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; OF"_nfa
-OFQUOT_nfa:
-        .byte   $C3
-        .byte   "OF"
-        .byte   $A2
-; ----------------------------------------------------------------------------
-        .word   OF_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $05
-        .word   QPAIRS
-        .word   COMPILE
-        .word   POFQUOT
-        .word   LIT
-        .word   $22
-        .word   WORD
-        .word   HERE
-        .word   CAT
-        .word   ONEP
-        .word   ALLOT
-        .word   MRKFROM
-        .word   LIT
-        .word   $06
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-ENDOF_nfa:
-        .byte   $C5
-        .byte   "ENDO"
-        .byte   $C6
-; ----------------------------------------------------------------------------
-        .word   OFQUOT_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $06
-        .word   QPAIRS
-        .word   COMPILE
-        .word   BRANCH
-        .word   MRKFROM
-        .word   SWAP
-        .word   RESFROM
-        .word   LIT
-        .word   $05
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-ENDCASE_nfa:
-        .byte   $C7
-        .byte   "ENDCAS"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   ENDOF_nfa
-        .word   DOCOL
-        .word   LIT
-        .word   $05
-        .word   QPAIRS
-        .word   COMPILE
-        .word   DROP
-LDE01:
-        .word   SPat
-        .word   CSP
-        .word   AT
-        .word   SUB
-        .word   ZBRANCH
-        .word   LDE13
-        .word   RESFROM
-        .word   BRANCH
-        .word   LDE01
-LDE13:
-        .word   CSP
-        .word   STORE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-THEN_nfa:
-        .byte   $C4
-        .byte   "THE"
-        .byte   $CE
-; ----------------------------------------------------------------------------
-        .word   ENDCASE_nfa
-        .word   DOCOL
-        .word   ENDIF
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-END_nfa:
-        .byte   $C3
-        .byte   "EN"
-        .byte   $C4
-; ----------------------------------------------------------------------------
-        .word   THEN_nfa
-        .word   DOCOL
-        .word   UNTIL
-        .word   SEMIS
+#ifdef WITH_PSEUDO_IF
+#echo "Ajout des mots IF(, )ELSE(, )ENDIF"
 ; ----------------------------------------------------------------------------
 ; IF(_nfa
 IFP_nfa:
@@ -5589,7 +5727,7 @@ IFP_nfa:
         .byte   "IF"
         .byte   $A8
 ; ----------------------------------------------------------------------------
-        .word   END_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   ZEQUAL
         .word   ZBRANCH
@@ -5657,6 +5795,15 @@ PENDIF_nfa:
         .word   PELSEP_nfa
         .word   DOCOL
         .word   SEMIS
+
+-last_forth_word_nfa = PENDIF_nfa
+#endif
+
+; ----------------------------------------------------------------------------
+;                    Gestion chargement d'un écran
+; ----------------------------------------------------------------------------
+#ifdef NEED_QLOADING
+#echo "Ajout du mot ?LOADING"
 ; ----------------------------------------------------------------------------
 ; ?LOADING_nfa
 QLOADING_nfa:
@@ -5664,7 +5811,7 @@ QLOADING_nfa:
         .byte   "?LOADIN"
         .byte   $C7
 ; ----------------------------------------------------------------------------
-        .word   PENDIF_nfa
+        .word   last_forth_word_nfa
 ; ?LOADING
 QLOADING:
         .word   DOCOL
@@ -5675,11 +5822,17 @@ QLOADING:
         .word   $16
         .word   QERROR
         .word   SEMIS
+
+-last_forth_word_nfa = QLOADING_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_BACKSLASH
+#echo "Ajout du mot \\"
 backslash_nfa:
         .byte   $81,$DC
 ; ----------------------------------------------------------------------------
-        .word   QLOADING_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   QLOADING
         .word   CSLL
@@ -5691,6 +5844,12 @@ backslash_nfa:
         .word   IN
         .word   PSTORE
         .word   SEMIS
+
+-last_forth_word_nfa = backslash_nfa
+#endif
+
+#ifdef WITH_FOLLOW
+#echo "Ajout du mot -->"
 ; ----------------------------------------------------------------------------
 ; -->_nfa
 FOLLOW_nfa:
@@ -5698,7 +5857,7 @@ FOLLOW_nfa:
         .byte   "--"
         .byte   $BE
 ; ----------------------------------------------------------------------------
-        .word   backslash_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   QLOADING
         .word   ZERO
@@ -5713,13 +5872,19 @@ FOLLOW_nfa:
         .word   BLK
         .word   PSTORE
         .word   SEMIS
+
+-last_forth_word_nfa = FOLLOW_nfa
+#endif
+
+#ifdef NEED_LOAD
+#echo "Ajout du mot LOAD"
 ; ----------------------------------------------------------------------------
 LOAD_nfa:
         .byte   $84
         .byte   "LOA"
         .byte   $C4
 ; ----------------------------------------------------------------------------
-        .word   FOLLOW_nfa
+        .word   last_forth_word_nfa
 LOAD:
         .word   DOCOL
         .word   BLK
@@ -5743,13 +5908,19 @@ LOAD:
         .word   BLK
         .word   STORE
         .word   SEMIS
+
+-last_forth_word_nfa = LOAD_nfa
+#endif
+
+#ifdef WITH_THRU
+#echo "Ajout du mot THRU"
 ; ----------------------------------------------------------------------------
 THRU_nfa:
         .byte   $84
         .byte   "THR"
         .byte   $D5
 ; ----------------------------------------------------------------------------
-        .word   LOAD_nfa
+        .word   last_forth_word_nfa
 THRU:
         .word   DOCOL
         .word   ONEP
@@ -5763,6 +5934,7 @@ LDF40:
         .word   SEMIS
 
 -last_forth_word_nfa = THRU_nfa
+#endif
 
 ; ----------------------------------------------------------------------------
 ; LOAD-USING_nfa
@@ -5803,6 +5975,10 @@ THRU_USING_nfa:
 #endif
 
 ; ----------------------------------------------------------------------------
+; Utilisé par LIST, TRIAD, INDEX, VLIST
+; ----------------------------------------------------------------------------
+#ifdef NEED_QTERMSTOP
+#echo "Ajout du mot ?TERMSTOP"
 ; ?TERMSTOP_nfa
 QTERMSTOP_nfa:
         .byte   $89
@@ -5831,6 +6007,16 @@ QTERMSTOP:
         .word   OR
 LDFAE:
         .word   SEMIS
+
+-last_forth_word_nfa = QTERMSTOP_nfa
+#endif
+
+; ----------------------------------------------------------------------------
+;                    Gestion affichage d'un écran
+; ----------------------------------------------------------------------------
+; ----------------------------------------------------------------------------
+#ifdef NEED_CSLL
+#echo "Ajout du mot C/L"
 ; ----------------------------------------------------------------------------
 ; C/L_nfa
 CSLL_nfa:
@@ -5838,12 +6024,19 @@ CSLL_nfa:
         .byte   "C/"
         .byte   $CC
 ; ----------------------------------------------------------------------------
-        .word   QTERMSTOP_nfa
+        .word   last_forth_word_nfa
 ; C/L
 CSLL:
         .word   DOCON
 ; ----------------------------------------------------------------------------
         .word   $0040
+
+-last_forth_word_nfa = CSLL_nfa
+#endif
+
+
+#ifdef WITH_PLINE
+#echo "Ajout des mots (LINE)"
 ; ----------------------------------------------------------------------------
 ; (LINE)_nfa
 PLINE_nfa:
@@ -5851,7 +6044,7 @@ PLINE_nfa:
         .byte   "(LINE"
         .byte   $A9
 ; ----------------------------------------------------------------------------
-        .word   CSLL_nfa
+        .word   last_forth_word_nfa
 ; (LINE)
 PLINE:
         .word   DOCOL
@@ -5867,26 +6060,38 @@ PLINE:
         .word   PLUS
         .word   CSLL
         .word   SEMIS
+
+-last_forth_word_nfa = PLINE_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_DOTLINE
+#echo "Ajout des mots .LINE"
 DOTLINE_nfa:
         .byte   $85
         .byte   ".LIN"
         .byte   $C5
 ; ----------------------------------------------------------------------------
-        .word   PLINE_nfa
+        .word   last_forth_word_nfa
 DOTLINE:
         .word   DOCOL
         .word   PLINE
         .word   DTRAILING
         .word   TYPE
         .word   SEMIS
+
+-last_forth_word_nfa = DOTLINE_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_LIST
+#echo "Ajout du mot LIST"
 LIST_nfa:
         .byte   $84
         .byte   "LIS"
         .byte   $D4
 ; ----------------------------------------------------------------------------
-        .word   DOTLINE_nfa
+        .word   last_forth_word_nfa
 LIST:
         .word   DOCOL
         .word   CR
@@ -5919,13 +6124,19 @@ LE012:
         .word   LE012
         .word   CR
         .word   SEMIS
+
+-last_forth_word_nfa = LIST_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_TRIAD
+#echo "Ajout du mot TRIAD"
 TRIAD_nfa:
         .byte   $85
         .byte   "TRIA"
         .byte   $C4
 ; ----------------------------------------------------------------------------
-        .word   LIST_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   LIT
         .word   $0C
@@ -5956,13 +6167,19 @@ LE058:
         .word   MESSAGE
         .word   CR
         .word   SEMIS
+
+-last_forth_word_nfa = TRIAD_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_INDEX
+#echo "Ajout du mot INDEX"
 INDEX_nfa:
         .byte   $85
         .byte   "INDE"
         .byte   $D8
 ; ----------------------------------------------------------------------------
-        .word   TRIAD_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   LIT
         .word   $0C
@@ -5986,14 +6203,22 @@ LE08A:
         .word   PLOOP
         .word   LE08A
         .word   SEMIS
+
+-last_forth_word_nfa = INDEX_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
+;                         Gestion du dictionnaire
+; ----------------------------------------------------------------------------
+#ifdef WITH_FORGET
+#echo "Ajout du mot V<"
 ; V<_nfa
 VTO_nfa:
         .byte   $82
         .byte   "V"
         .byte   $BC
 ; ----------------------------------------------------------------------------
-        .word   INDEX_nfa
+        .word   last_forth_word_nfa
 ; V<
 VTO:
         .word   DOCOL
@@ -6007,7 +6232,9 @@ VTO:
         .word   SWAP
         .word   ULESS
         .word   SEMIS
+
 ; ----------------------------------------------------------------------------
+#echo "Ajout du mot FORGET"
 FORGET_nfa:
         .byte   $86
         .byte   "FORGE"
@@ -6075,6 +6302,10 @@ LE124:
         .word   DP
         .word   STORE
         .word   SEMIS
+
+-last_forth_word_nfa = FORGET_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
 ; ID._nfa
 IDDOT_nfa:
@@ -6082,7 +6313,7 @@ IDDOT_nfa:
         .byte   "ID"
         .byte   $AE
 ; ----------------------------------------------------------------------------
-        .word   FORGET_nfa
+        .word   last_forth_word_nfa
 ; ID.
 IDDOT:
         .word   DOCOL
@@ -6112,13 +6343,18 @@ LE16E:
         .word   TWODROP
 LE170:
         .word   SEMIS
+
+-last_forth_word_nfa = IDDOT_nfa
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_VLIST
+#echo "Ajout du mot VLIST"
 VLIST_nfa:
         .byte   $85
         .byte   "VLIS"
         .byte   $D4
 ; ----------------------------------------------------------------------------
-        .word   IDDOT_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   ZERO
         .word   OUT
@@ -6163,14 +6399,20 @@ LE1A6:
         .word   LE18A
         .word   DROP
         .word   SEMIS
+
+-last_forth_word_nfa = VLIST_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
 ; VOC-LIST_nfa
+#ifdef WITH_VOC_LIST
+#echo "Ajout du mot VOC-LIST"
 VOC_LIST_nfa:
         .byte   $88
         .byte   "VOC-LIS"
         .byte   $D4
 ; ----------------------------------------------------------------------------
-        .word   VLIST_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   VOCLINK
 LE1DD:
@@ -6188,6 +6430,9 @@ LE1DD:
         .word   LE1DD
 LE1F5:
         .word   SEMIS
+
+-last_forth_word_nfa = VOC_LIST_nfa
+#endif
 
 ; ----------------------------------------------------------------------------
 #ifdef WITH_ROMend
@@ -6219,34 +6464,54 @@ teleforth_signature:
         .byte   "(c) 1989 Thierry BESTEL"
         .byte   $0D,$0A,$00
 
+; ----------------------------------------------------------------------------
+; Utilisé par CLOCK, GRAFX, IOS_xxx, SOUNDS, STRATSED_xxx, WINDOWS
+#ifdef NEED_AYX
+#echo "Ajout du mot AYX"
 AYX_nfa:
         .byte   $83
         .byte   "AY"
         .byte   $D8
 ; ----------------------------------------------------------------------------
-        .word   VOC_LIST_nfa
+        .word   last_forth_word_nfa
 AYX:
         .word   DOCON
 ; ----------------------------------------------------------------------------
         .word   $0563
+
+-last_forth_word_nfa = AYX_nfa
+#endif
+
+
 ; ----------------------------------------------------------------------------
+#ifdef NEED_PIO
+#echo "Ajout du mot PIO"
+; Utilisé par INPUT, OUTPUT, TERMINAL, ?TERMSTOP, IOS_extended, Stratsed_xxx
 PIO_nfa:
         .byte   $83
         .byte   "PI"
         .byte   $CF
 ; ----------------------------------------------------------------------------
-        .word   AYX_nfa
+        .word   last_forth_word_nfa
 PIO:
         .word   DOCON
 ; ----------------------------------------------------------------------------
         .word   $0566
+
+-last_forth_word_nfa = PIO_nfa
+#endif
+
+
+#ifdef NEED_MON
+#echo "Ajout du mot MON"
 ; ----------------------------------------------------------------------------
+; Utilisé par CLOCK, GRAFX, IOS_xxx, SOUNDS, Stratsed_extended (FILENAME), WINDOWS
 MON_nfa:
         .byte   $83
         .byte   "MO"
         .byte   $CE
 ; ----------------------------------------------------------------------------
-        .word   PIO_nfa
+        .word   last_forth_word_nfa
 MON:
         .word   MON_pfa
 ; ----------------------------------------------------------------------------
@@ -6270,14 +6535,20 @@ MON_pfa:
         ldx     _XSAVE
         jmp     NEXT
 
+-last_forth_word_nfa = MON_nfa
+#endif
+
+#ifdef NEED_MONCOL
+#echo "Ajout du mot MON:"
 ; ----------------------------------------------------------------------------
 ; MON:_nfa -> Compile un mot d'appel à une procédure Telemon
+; Utilisé par les vocabulaires IOS_extended, GRAFX, SOUNDS
 MONCOL_nfa:
         .byte   $84
         .byte   "MON"
         .byte   $BA
 ; ----------------------------------------------------------------------------
-        .word   MON_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   CREATE
         .word   CCOMMA
@@ -6292,14 +6563,20 @@ DOMON:
         ldx     _XSAVE
         jmp     NEXT
 
+-last_forth_word_nfa = MONCOL_nfa
+#endif
+
+#ifdef NEED_HRSCOL
+#echo "Ajout mot HRS:"
 ; ----------------------------------------------------------------------------
 ; HRS:_nfa
+; Utilisé uniquement par les vocabulaires GRAFX et SOUNDS
 HRSCOL_nfa:
         .byte   $84
         .byte   "HRS"
         .byte   $BA
 ; ----------------------------------------------------------------------------
-        .word   MONCOL_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   CREATE
         .word   CCOMMA
@@ -6335,13 +6612,19 @@ LE2DD:
 LE2E4:
         jmp     NEXT
 
+-last_forth_word_nfa = HRSCOL_nfa
+#endif
+
+;#ifdef NEED_HIMEM
+;#echo "Ajout mot HIMEM"
 ; ----------------------------------------------------------------------------
+; Utilisé uniquement par (ABORT) et (+OVLOAD)
 HIMEM_nfa:
         .byte   $85
         .byte   "HIME"
         .byte   $CD
 ; ----------------------------------------------------------------------------
-        .word   HRSCOL_nfa
+        .word   last_forth_word_nfa
 HIMEM:
         .word   DOCOL
         .word   QHIRES
@@ -6358,6 +6641,7 @@ LE303:
         .word   SEMIS
 
 -last_forth_word_nfa = HIMEM_nfa
+;#endif
 
 ; ----------------------------------------------------------------------------
 ; Vocabulaire SOUNDS
@@ -6379,139 +6663,12 @@ LE303:
 
 ; ----------------------------------------------------------------------------
 #ifdef WITH_CLOCK
-#echo "Ajout du mot CLOCK"
-
-CLOCK_nfa:
-        .byte   $85
-        .byte   "CLOC"
-        .byte   $CB
-; ----------------------------------------------------------------------------
-        .word   last_forth_word_nfa
-        .word   DOCOL
-        .word   ZERO
-        .word   POF
-        .word   LE5ED
-        .word   LIT
-        .word   XCLCL
-        .word   MON
-        .word   BRANCH
-        .word   LE62D
-LE5ED:
-        .word   ONE
-        .word   POF
-        .word   LE60F
-        .word   LIT
-        .word   $28
-        .word   STAR
-        .word   PLUS
-        .word   LIT
-        .word   SCRTXT
-        .word   PLUS
-        .word   AYX
-        .word   STORE
-        .word   LIT
-        .word   XWRCLK
-        .word   MON
-        .word   BRANCH
-        .word   LE62D
-LE60F:
-        .word   TWO
-        .word   POF
-        .word   LE62B
-        .word   LIT
-        .word   timeS
-        .word   CSTORE
-        .word   LIT
-        .word   timeM
-        .word   CSTORE
-        .word   LIT
-        .word   timeH
-        .word   CSTORE
-        .word   BRANCH
-        .word   LE62D
-LE62B:
-        .word   DROP
-LE62D:
-        .word   SEMIS
-
--last_forth_word_nfa = CLOCK_nfa
+#include "Clock.voc"
 #endif
 
 ; ----------------------------------------------------------------------------
 #ifdef WITH_WAIT
-#echo "Ajout du mot WAIT"
-
-WAIT_nfa:
-        .byte   $84
-        .byte   "WAI"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   last_forth_word_nfa
-WAIT:
-        .word   DOCOL
-        .word   ZERO
-        .word   POF
-        .word   LE664
-        .word   SWAP
-LE640:
-        .word   DUP
-        .word   LIT
-        .word   timeH
-        .word   CAT
-        .word   EQUAL
-        .word   ZBRANCH
-        .word   LE640
-        .word   DROP
-LE650:
-        .word   DUP
-        .word   LIT
-        .word   timeM
-        .word   CAT
-        .word   EQUAL
-        .word   ZBRANCH
-        .word   LE650
-        .word   DROP
-        .word   BRANCH
-        .word   LE69E
-LE664:
-        .word   ONE
-        .word   POF
-        .word   LE680
-        .word   LIT
-        .word   $42
-        .word   STORE
-LE670:
-        .word   LIT
-        .word   $42
-        .word   AT
-        .word   ZEQUAL
-        .word   ZBRANCH
-        .word   LE670
-        .word   BRANCH
-        .word   LE69E
-LE680:
-        .word   TWO
-        .word   POF
-        .word   LE69C
-        .word   LIT
-        .word   $44
-        .word   STORE
-LE68C:
-        .word   LIT
-        .word   $44
-        .word   AT
-        .word   ZEQUAL
-        .word   ZBRANCH
-        .word   LE68C
-        .word   BRANCH
-        .word   LE69E
-LE69C:
-        .word   DROP
-LE69E:
-        .word   SEMIS
-
--last_forth_word_nfa = WAIT_nfa
-
+#include "Wait.voc"
 #endif
 
 ; ----------------------------------------------------------------------------
@@ -6571,6 +6728,7 @@ STARTUP:
         .word   LIT
         .word   vnmi+1
         .word   STORE
+;
         .word   LIT
         .word   flgtel
         .word   ONE
@@ -6611,7 +6769,7 @@ LEA81:
         .word   LIT
         .word   xfield
         .word   CSTORE
-
+;
 #ifdef WITH_AUTOSTART_SUPPORT
 #echo "Pas de autostart 'FORTH.DAT' possible"
 #endif
@@ -6630,66 +6788,7 @@ LEAFF:
 
 ; ----------------------------------------------------------------------------
 #ifdef WITH_EXTERNAL_HELPERS
-#echo "Ajout EDIT, ASSEMBLER, CODE, ;CODE"
-
-EDIT_nfa:
-        .byte   $84
-        .byte   "EDI"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   last_forth_word_nfa
-        .word   DOCOL
-        .word   PLITQ
-; ----------------------------------------------------------------------------
-        .byte   $0C
-        .byte   "A-EDITOR.COM"
-
-; ----------------------------------------------------------------------------
-        .word   PPOVLOAD
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-ASSEMBLER_nfa:
-        .byte   $C9
-        .byte   "ASSEMBLE"
-        .byte   $D2
-; ----------------------------------------------------------------------------
-        .word   EDIT_nfa
-ASSEMBLER:
-        .word   DOCOL
-        .word   ZERO
-        .word   PLITQ
-; ----------------------------------------------------------------------------
-        .byte   $0F
-        .byte   "A-ASSEMBLER.COM"
-
-; ----------------------------------------------------------------------------
-        .word   PPOVLOAD
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-CODE_nfa:
-        .byte   $84
-        .byte   "COD"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   ASSEMBLER_nfa
-        .word   DOCOL
-        .word   ONE
-        .word   ASSEMBLER
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; ;CODE_nfa
-SEMICODE_nfa:
-        .byte   $85
-        .byte   ";COD"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   CODE_nfa
-        .word   DOCOL
-        .word   TWO
-        .word   ASSEMBLER
-        .word   SEMIS
-
--last_forth_word_nfa = SEMICODE_nfa
+#include "Externals.voc"
 #endif
 
 ; ----------------------------------------------------------------------------
@@ -6699,6 +6798,8 @@ SEMICODE_nfa:
 #endif
 
 ; ----------------------------------------------------------------------------
+#ifdef WITH_INPUT
+#echo "Ajout mot INPUT"
 INPUT_nfa:
         .byte   $85
         .byte   "INPU"
@@ -6710,18 +6811,28 @@ INPUT_nfa:
         .word   ONEP
         .word   CSTORE
         .word   SEMIS
+
+-last_forth_word_nfa = INPUT_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
+#ifdef WITH_OUTPUT
+#echo "Ajout mot OUTPUT"
 OUTPUT_nfa:
         .byte   $86
         .byte   "OUTPU"
         .byte   $D4
 ; ----------------------------------------------------------------------------
-        .word   INPUT_nfa
+        .word   last_forth_word_nfa
         .word   DOCOL
         .word   PIO
         .word   TWOP
         .word   CSTORE
         .word   SEMIS
+
+-last_forth_word_nfa = OUTPUT_nfa
+#endif
+
 ; ----------------------------------------------------------------------------
 ; Necessite les mots SCRW et CURSOR du vocabulaire WINDOWS
 ; Necessite les mots OPCH, QTERM, CKEY et CEMIT du vocabulaire IOS minimal
@@ -6730,7 +6841,7 @@ TERMINAL_nfa:
         .byte   "TERMINA"
         .byte   $CC
 ; ----------------------------------------------------------------------------
-        .word   OUTPUT_nfa
+        .word   last_forth_word_nfa
 TERMINAL:
         .word   DOCOL
         .word   ZERO
@@ -6761,6 +6872,7 @@ TERMINAL:
         .word   EMIT_pfa
         .word   PIS
         .word   SEMIS
+
 ; ----------------------------------------------------------------------------
 CR_nfa:
         .byte   $82
@@ -6777,6 +6889,7 @@ CR:
         .word   $0A
         .word   EMIT
         .word   SEMIS
+
 ; ----------------------------------------------------------------------------
 CLS_nfa:
         .byte   $83
@@ -6790,6 +6903,7 @@ CLS:
         .word   $0C
         .word   EMIT
         .word   SEMIS
+
 ; ----------------------------------------------------------------------------
 GOTOXY_nfa:
         .byte   $86
@@ -6811,6 +6925,7 @@ GOTOXY:
         .word   OR
         .word   EMIT
         .word   SEMIS
+
 ; ----------------------------------------------------------------------------
 ; ?HIRES_nfa
 QHIRES_nfa:
@@ -6837,61 +6952,32 @@ QHIRES:
 #endif
 
 ; ----------------------------------------------------------------------------
-; TEXT vocabulaire FORTH
-#ifdef WITH_TEXT_LINE
-#echo "Ajout des mots TEXT et LINE"
-
-TEXT_nfa:
-        .byte   $84
-        .byte   "TEX"
-        .byte   $D4
-; ----------------------------------------------------------------------------
-        .word   QHIRES_nfa
-; TEXT vocabulaire FORTH
-TEXT:
-        .word   DOCOL
-        .word   HERE
-        .word   CSLL
-        .word   ONEP
-        .word   BLANKS
-        .word   WORD
-        .word   HERE
-        .word   PAD
-        .word   CSLL
-        .word   ONEP
-        .word   CMOVE
-        .word   SEMIS
-; ----------------------------------------------------------------------------
-; LINE vocabulaire FORTH
-LINE_nfa:
-        .byte   $84
-        .byte   "LIN"
-        .byte   $C5
-; ----------------------------------------------------------------------------
-        .word   TEXT_nfa
-; LINE vocabulaire FORTH
-LINE:
-        .word   DOCOL
-        .word   DUP
-        .word   LIT
-        .word   $FFF0
-        .word   ANDforth
-        .word   LIT
-        .word   $17
-        .word   QERROR
-        .word   SCR
-        .word   AT
-        .word   PLINE
-        .word   DROP
-        .word   SEMIS
-
--last_forth_word_nfa = LINE_nfa
-#endif
-
-; ----------------------------------------------------------------------------
 ; Vocabulaire EDITOR
 #ifdef WITH_EDITOR_VOC
 #include "Editor.voc"
+#else
+#ifdef WITH_WHERE
+#echo "Ajout mot WHERE vectorisé"
+WHERE_nfa:
+        .byte   $85
+        .byte   "WHER","E"+$80
+        .word   last_forth_word_nfa
+WHERE:
+        .word   DODEFER
+        .word   WHERE_defer
+
+PWHERE_nfa:
+        .byte   $87
+        .byte   "(WHERE",")"+$80
+        .word   WHERE_nfa
+PWHERE:
+        .word   DOCOL
+        .word   DROP
+        .word   DROP
+        .word   SEMIS
+
+-last_forth_word_nfa = PWHERE_nfa
+#endif
 #endif
 
 ; ----------------------------------------------------------------------------
@@ -6991,6 +7077,12 @@ EMIT_defer = RAM_START-2+(*-DictInitTable)
 ; +34 -> Pour le vocabulaire EDITOR
 #ifdef WITH_EDITOR_VOC
 #include "Editor.voc"
+#else
+#ifdef WITH_WHERE
+#echo "Ajout ' (WHERE) IS WHERE"
+WHERE_defer = RAM_START-2+(*-DictInitTable)
+        .word PWHERE
+#endif
 #endif
 
 ; ----------------------------------------------------------------------------
@@ -7000,9 +7092,12 @@ EMIT_defer = RAM_START-2+(*-DictInitTable)
 #endif
 
 ; ----------------------------------------------------------------------------
+#ifndef COMPACT
         .byte   $00,$00,$00,$00,$00,$00,$00,$00
         .byte   $00,$00,$00,$00,$00,$00
+#endif
 
+; ----------------------------------------------------------------------------
 #ifdef WITH_CH376
 #include "CH376.voc"
 #endif

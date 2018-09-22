@@ -1,0 +1,74 @@
+; ----------------------------------------------------------------------------
+; Modules externes
+
+#ifdef WITH_EXTERNAL_HELPERS
+
+#ifdef EXTERNALS_INC
+#error "*** Fichier Externals.voc déjà inclus!""
+
+#else
+#define EXTERNALS_INC
+#echo "Ajout commandes externes EDIT, ASSEMBLER, CODE, ;CODE"
+
+EDIT_nfa:
+        .byte   $84
+        .byte   "EDI"
+        .byte   $D4
+; ----------------------------------------------------------------------------
+        .word   last_forth_word_nfa
+        .word   DOCOL
+        .word   PLITQ
+; ----------------------------------------------------------------------------
+        .byte   $0C
+        .byte   "A-EDITOR.COM"
+
+; ----------------------------------------------------------------------------
+        .word   PPOVLOAD
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+ASSEMBLER_nfa:
+        .byte   $C9
+        .byte   "ASSEMBLE"
+        .byte   $D2
+; ----------------------------------------------------------------------------
+        .word   EDIT_nfa
+ASSEMBLER:
+        .word   DOCOL
+        .word   ZERO
+        .word   PLITQ
+; ----------------------------------------------------------------------------
+        .byte   $0F
+        .byte   "A-ASSEMBLER.COM"
+
+; ----------------------------------------------------------------------------
+        .word   PPOVLOAD
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+CODE_nfa:
+        .byte   $84
+        .byte   "COD"
+        .byte   $C5
+; ----------------------------------------------------------------------------
+        .word   ASSEMBLER_nfa
+        .word   DOCOL
+        .word   ONE
+        .word   ASSEMBLER
+        .word   SEMIS
+; ----------------------------------------------------------------------------
+; ;CODE_nfa
+SEMICODE_nfa:
+        .byte   $85
+        .byte   ";COD"
+        .byte   $C5
+; ----------------------------------------------------------------------------
+        .word   CODE_nfa
+        .word   DOCOL
+        .word   TWO
+        .word   ASSEMBLER
+        .word   SEMIS
+
+-last_forth_word_nfa = SEMICODE_nfa
+
+#endif
+
+#endif
