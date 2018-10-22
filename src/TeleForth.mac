@@ -1,0 +1,332 @@
+; ----------------------------------------------------------------------------
+; TeleForth.mac:
+; ----------------------------------------------------------------------------
+;				Macros
+; ----------------------------------------------------------------------------
+
+; ----------------------------------------------------------------------------
+; declare word_name, label mode
+; ----------------------------------------------------------------------------
+;	Création de l'entête dans le dictionnaire
+; ----------------------------------------------------------------------------
+.macro declare word_name, label, mode
+	.local nfa
+	.local name, lab, flags
+
+	.out .sprintf("Ajout du mot: %s::%s -> $%04x",current_voc,word_name, *)
+
+	;.ifndef link
+	;	link .set 0
+	;.endif
+
+	;
+	; name doit être de type chaine
+	; sinon il faut faire une conversion avec .string()
+	;
+	.if .match(word_name,"")
+		; .out "    guillement"
+		.define name  word_name
+	.elseif .match(word_name,'A')
+		; .out "    apostrophes"
+		.define name .sprintf("%c", word_name)
+	.else
+		; .out "    label ou numérique"
+		.define name .string(word_name)
+	.endif
+
+	.ifblank label
+		.define lab name
+	.else
+		.if .match(label,"")
+			; label est de type chaine
+			.define lab  label
+		.elseif .match(label, 'A')
+			; label est de type caractère
+			.define lab .sprintf("%c", label)
+		.else
+			; label est de type identificateur ou numérique
+			.define lab .string(label)
+		.endif
+	.endif
+
+	.ifblank mode
+		flags .set $80
+	.else
+		.if .xmatch( {mode}, immediate ) .or .xmatch({mode}, IMMEDIATE)
+			flags .set $C0
+		.else
+			.warning "Unknonwn mode", mode
+		.endif
+	.endif
+
+	; NFA
+	; Conserve l'adresse du NFA pour plus tard
+	nfa .set *
+	;.ident(.sprintf("%s_last_word_nfa",current_voc)) .set *
+
+	.if 0
+		; Pas de modification de la casse ds mots
+		.if .strlen(name)
+			; Octet de longueur + flags SMUDGE & IMMEDIATE
+			.byte .strlen(name) | flags
+
+ 		       ; Place la chaine avec le bit7 du dernier caratère à 1
+			.repeat .strlen(name)-1, I
+				.byte .strat(name,I)
+        		.endrepeat
+			.byte .strat(name,.strlen(name)-1) | $80
+		.else
+			; Cas du mot nul
+			.byte 01 | flags
+			.byte $80
+		.endif
+	.else
+		; On force en minuscules
+		lower name, flags
+		; upper name, flags
+	.endif
+
+	; LFA
+	; Renseigne le LFA du mot avec le lien vers le NFA du mot précédent
+	.word .ident(.sprintf("%s_last_word_nfa",current_voc))
+
+	; CFA (Valeur numérique)
+	; Peut être utilisé si on ne génère pas de fichier des Labels
+	; .ident(.sprintf(lab)) .set *
+
+	; CFA (Label)
+	; Utiliser cette ligne si on génère un fichier des Labels (-Ln TeleForth.sym)
+	.ident(.sprintf(lab)) := *
+
+	; Renseigné après l'appel de la macro
+	; .word DOCOLON
+
+	; On met a jour l'adresse du dernier mot du vocabulaire courant
+	; avec l'adresse du NFA du nouveau mot
+	.ident(.sprintf("%s_last_word_nfa",current_voc)) .set nfa
+.endmacro
+
+; ----------------------------------------------------------------------------
+; lower srting, flag
+; ----------------------------------------------------------------------------
+;	Insère une chaine après conversion en minuscules
+; ----------------------------------------------------------------------------
+.macro lower string, flags
+	; .out string
+
+	.if .strlen(string)
+		.byte .strlen(string) | flags
+
+		.repeat .strlen(string)-1, I
+			char .set .strat(string,I)
+			.if (char >= 'A') .and (char <='Z')
+				char .set char+$20
+			.endif
+			.byte char
+		.endrepeat
+
+		char .set .strat(string, .strlen(string)-1)
+		.if (char >= 'A') .and (char <='Z')
+			char .set char+$20
+		.endif
+		.byte char | $80
+	.else
+		; Cas du mot nul
+		.byte $01 | flags
+		.byte $80
+	.endif
+.endmacro
+
+; ----------------------------------------------------------------------------
+; upper srting, flag
+; ----------------------------------------------------------------------------
+;	Insère une chaine après conversion en minuscules
+; ----------------------------------------------------------------------------
+.macro upper string, flags
+	; .out string
+
+	.if .strlen(string)
+		.byte .strlen(string) | flags
+
+		.repeat .strlen(string)-1, I
+			char .set .strat(string,I)
+			.if (char >= 'a') .and (char <='z')
+				char .set char-$20
+			.endif
+			.byte char
+		.endrepeat
+
+		char .set .strat(string, .strlen(string)-1)
+		.if (char >= 'a') .and (char <='z')
+			char .set char-$20
+		.endif
+		.byte char | $80
+	.else
+		; Cas du mot nul
+		.byte $01 | flags
+		.byte $80
+	.endif
+.endmacro
+
+
+; ----------------------------------------------------------------------------
+; code name, label, mode
+; ----------------------------------------------------------------------------
+;	Déclaration pour un mot assembleur
+; ----------------------------------------------------------------------------
+.macro code name, label, mode
+	declare name, label, mode
+	.addr * + 2
+.endmacro
+
+; ----------------------------------------------------------------------------
+; constant name, label, value
+; ----------------------------------------------------------------------------
+;	Déclaration pour un mot constante
+; ----------------------------------------------------------------------------
+.macro constant name, label, value
+	declare name, label
+	; .addr DOCONSTANT
+	.addr DOCON
+	.word value
+.endmacro
+
+; ----------------------------------------------------------------------------
+; variable name, value
+; ----------------------------------------------------------------------------
+;	Déclaration pour un mot variable ( Version RAM )
+; ----------------------------------------------------------------------------
+.macro variable name, value
+	declare name
+	; .addr DOVARIABLE
+	.addr DOVAR
+	; Pour une version ROM, remplacer
+	; la valeur par un pointeur vers valeur en RAM
+	.word value
+.endmacro
+
+; ----------------------------------------------------------------------------
+; user name, label, offset
+; ----------------------------------------------------------------------------
+;	Déclaration pour un mot variable user
+;	offset: offset dans la table USER
+; ----------------------------------------------------------------------------
+.macro user name, label, offset
+	declare name, label
+	.addr DOUSER
+	.word offset
+.endmacro
+
+; ----------------------------------------------------------------------------
+; user_index name, label, index
+; ----------------------------------------------------------------------------
+;	Déclaration pour un mot variable user
+;	index: index de la variable dans la table USER
+; ----------------------------------------------------------------------------
+.macro user_index name, label, index
+	declare name, label
+	.addr DOUSER
+	.byte index << 1
+.endmacro
+
+; ----------------------------------------------------------------------------
+; vocabulary voc_name, label, mode
+; ----------------------------------------------------------------------------
+;	Déclaration d'un vocabulaire (Version ROM )
+; ----------------------------------------------------------------------------
+.macro vocabulary voc_name, label, mode
+	.local self
+
+	.out ""
+	.out .sprintf("Ajout du vocabulaire: %s::%s",current_voc,voc_name)
+
+;	.byte voc_name
+;	; LFA
+;	.word .ident(.sprintf("%s_last_word_nfa",current_voc))
+	self .set *
+	declare voc_name, label, mode
+
+	; CFA
+	.word DODOES
+
+	; PFA
+	; Necessaire parce que FORTH_pfa est utilisé par COLD
+	;
+	.ident(.sprintf("%s_pfa",voc_name)) .set *
+	.word DOVOC
+	; Pointeur vers le PFA DOVOC
+	.word  .ident(.sprintf("%s_voc",voc_name))
+
+	; Adresse du voc-link du nouveau vocabulaire
+	.ident(.sprintf("%s_voc_link",voc_name)) .set *
+	; Lien vers le vocabulaire courrant
+	;.word .ident(.sprintf("%s_voc_link",current_voc))
+	.word last_voc_link
+
+	; Lien par défaut vers le vocabulaire FORTH
+	; .ident(.sprintf("%s_last_word_nfa",voc_name)) .set FORTH_voc
+
+	; Le LFA du 1er mot du vocabulaire pointe sur FORTH_voc
+	; saut pour le 1er mot du vocabulaire FORTH qui pointe sur le NFA de FORTH
+	.if .xmatch( {voc_name}, "FORTH")
+		.ident(.sprintf("%s_last_word_nfa",voc_name)) .set self
+	.else
+		; .ident(.sprintf("%s_last_word_nfa",voc_name)) .set .ident("FORTH_voc")
+		.ident(.sprintf("%s_last_word_nfa",voc_name)) .set $140a
+	.endif
+
+	last_voc_link .set .ident(.sprintf("%s_voc_link",voc_name))
+
+	.undefine current_voc
+	.define current_voc voc_name
+.endmacro
+
+; ----------------------------------------------------------------------------
+; add_to_voc voc_name
+; ----------------------------------------------------------------------------
+;	Changement de vocabulaire
+; ----------------------------------------------------------------------------
+.macro add_to_voc voc_name
+	.out ""
+	.out .sprintf("Back to %s from %s", voc_name, current_voc)
+
+	.undefine current_voc
+	.define current_voc voc_name
+.endmacro
+
+; ----------------------------------------------------------------------------
+; vocabulary_pfa
+; ----------------------------------------------------------------------------
+;	Partie du vocabulaire placée en RAM
+; ----------------------------------------------------------------------------
+.macro vocabulary_pfa voc_name
+	.out .sprintf("Ajout entête du vocabulaire %s -> $%04x", voc_name, *)
+
+	.ident(.sprintf("%s_voc",voc_name)) .set *
+	.byte $81,$a0
+	.word .ident(.sprintf("%s_last_word_nfa",voc_name))
+.endmacro
+
+; ----------------------------------------------------------------------------
+; init
+; ----------------------------------------------------------------------------
+;	Initialise les variables nécessaires aux différentes macros
+; ----------------------------------------------------------------------------
+.macro init
+	.define current_voc "null"
+	null_last_word_nfa .set $0000
+	null_voc_link      .set $0000
+	last_voc_link      .set $0000
+.endmacro
+
+
+; ----------------------------------------------------------------------------
+; Permet d'utiliser 'xxx' en plus de "xxx" pour une chaine.
+; Utile pour pouvoir définir un mot contenant un "
+; ----------------------------------------------------------------------------
+.feature loose_string_term
+
+; ----------------------------------------------------------------------------
+; Initialisation
+; ----------------------------------------------------------------------------
+init
