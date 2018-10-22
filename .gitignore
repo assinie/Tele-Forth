@@ -1,3 +1,10 @@
 # Temporary
 *~
 /tmp/
+
+# build files
+.depend
+build.inc
+*.o
+*.sym
+*.lst
