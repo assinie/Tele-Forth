@@ -8,8 +8,8 @@
 
     * = $c000
 #include "TeleForth.inc"
-#define TELEFORTH_20
-;#define TELEFORTH_12
+;#define TELEFORTH_20
+#define TELEFORTH_12
 
 ; ----------------------------------------------------------------------------
 ; Version Teleforth 2.0
@@ -33,16 +33,16 @@
 ;#define WITH_DECOMPILER
 
 ; Extensions sonores
-;#define WITH_SOUNDS_VOC
+#define WITH_SOUNDS_VOC
 
 ; Extensions graphiques
-;#define WITH_GRAFX_VOC
+#define WITH_GRAFX_VOC
 
 ; SCRW et CURSOR nécessaires pour TERMINAL
 #define WITH_WINDOWS_VOC
 
-;#define WITH_CLOCK
-;#define WITH_WAIT
+#define WITH_CLOCK
+#define WITH_WAIT
 
 ; Support disque (Telestrat)
 ; R/W nécessaire pour FLUSH et BLOCK
@@ -56,7 +56,18 @@
 #define WITH_CH376
 ; Necessaire pour support AUTOSTART
 ;#define CH376_Extended
+
+; Force les noms de fichiers en MAJUSCULES
+#define WITH_UPERCASE_FILENAME
+;#define WITH_UPPER
+
 #define WITH_ARGV
+
+; Support carte Twilight
+#define WITH_TWILIGHTE
+
+; Support EXIT (source dans Control.asm)
+#define WITH_EXIT
 
 ; Support des structures de contrôle
 #define WITH_ALL_TESTS
@@ -74,19 +85,20 @@
 #define AUTOSTART_FILE "STARTUP.DAT"
 
 ; Gestion des écrans
-;#define WITH_QLOADING
+#define WITH_QLOADING
 #define WITH_FOLLOW
 ;#define WITH_BACKSLASH
-;#define WITH_CSLL
-;#define WITH_PLINE
-;#define WITH_DOTLINE
-;#define WITH_INDEX
-;#define WITH_LIST
-;#define WITH_TRIAD
-;#define WITH_THRU
+#define WITH_BACKSLASH_IMMEDIATE
+#define WITH_CSLL
+#define WITH_PLINE
+#define WITH_DOTLINE
+#define WITH_INDEX
+#define WITH_LIST
+#define WITH_TRIAD
+#define WITH_THRU
 #define WITH_LOAD
 
-;#define WITH_OVERLAYS_SUPPORT
+#define WITH_OVERLAYS_SUPPORT
 ;#define WITH_EXTERNAL_HELPERS
 
 ; OPCH, QTERM, CKEY et CEMIT nécessaires pour TERMINAL
@@ -99,9 +111,9 @@
 ;#define WITH_OUTPUT
 
 ; Support editeur standard
-;#define WITH_EDITOR_VOC
-;#define WITH_WHERE
-;#define WITH_EDITOR_TEXT_LINE
+#define WITH_EDITOR_VOC
+#define WITH_WHERE
+#define WITH_EDITOR_TEXT_LINE
 ;#define WITH_EDITOR_SCRMOVE_SCRCOPY
 
 ; Jeu de la vie (démonstration)
@@ -355,6 +367,14 @@
 #define NEED_LOAD
 #endif
 
+#ifdef WITH_UPERCASE_FILENAME
+#define NEED_UPPER
+#endif
+
+#ifdef WITH_UPPER
+#define NEED_UPPER
+#endif
+
 #ifdef WITH_STRATSED
 #define NEED_LOAD
 #endif
@@ -389,6 +409,10 @@
 
 #ifdef WITH_FOLLOW
 #define NEED_QLOADING
+#endif
+
+#ifdef WITH_BACKSLASH_IMMEDIATE
+#define WITH_BACKSLASH
 #endif
 
 #ifdef WITH_BACKSLASH
@@ -542,10 +566,13 @@ hrspat          = $02AA                        ; Motif
 vnmi            = $02F4                        ; Vecteur NMI (n° de banque, adresse)
 virq            = $02FA                        ; Vecteur IRQ
 vaplic          = $02FD                        ; N° banque, adresse TELEMATIC->LANGAGE
+
 v2dra           = $0321
+
 Exbnk           = $040C
 vexbnk          = $0414
 bnkcib          = $0417
+
 drive           = $0500                        ; N° de drive (0-3)
 piste           = $0501                        ; N° de piste (b7=1-> face B)
 secteu          = $0502                        ; N° de secteur
@@ -729,11 +756,11 @@ PUT:
         jmp     NEXT
 
 ; ----------------------------------------------------------------------------
-; Copie ACC mots de la pile vers N
+; Transfère ACC mots de la pile vers N
 SETUP:
         asl
         sta     N-1
-        sta     NEXT+1
+        sta     NEXT+1                         ; /?\ Bug, heureusement NEXT est en ROM!
 LC0B9:
         lda     BOT,x
         sta     N,y
@@ -2667,7 +2694,7 @@ DODOES:
         ldy     #$02
         lda     (W),y
         sta     IP
-        sty     NEXT+2
+        sty     NEXT+2                         ; /?\ Bug, heureusement NEXT est en ROM!
         iny
         lda     (W),y
         sta     IP+1
@@ -5828,9 +5855,15 @@ QLOADING:
 
 ; ----------------------------------------------------------------------------
 #ifdef WITH_BACKSLASH
-#echo "Ajout du mot \\"
+#ifndef WITH_BACKSLASH_IMMEDIATE
 backslash_nfa:
+#echo "Ajout du mot \\"
         .byte   $81,$DC
+#else
+backslash_nfa:
+#echo "Ajout du mot \\ (IMMEDIATE)"
+        .byte   $C1,$DC
+#endif
 ; ----------------------------------------------------------------------------
         .word   last_forth_word_nfa
         .word   DOCOL
@@ -6458,11 +6491,16 @@ INIT_RAM:
 
 ; ----------------------------------------------------------------------------
 teleforth_signature:
+#ifdef TELEFORTH_V12
         .byte   "TELE-FORTH V1.2"
 
         .byte   $0D,$0A
         .byte   "(c) 1989 Thierry BESTEL"
         .byte   $0D,$0A,$00
+#else
+        .byte   "TELE-FORTH V","VERSION_MAJ.VERSION_MIN (ch376) - __DATE__"
+        .byte $00
+#endif
 
 ; ----------------------------------------------------------------------------
 ; Utilisé par CLOCK, GRAFX, IOS_xxx, SOUNDS, STRATSED_xxx, WINDOWS
@@ -7004,6 +7042,12 @@ ROMend:
 #endif
 
 ; ----------------------------------------------------------------------------
+; Vocabulaire pour la carte Twilight
+#ifdef WITH_TWILIGHTE
+#include "Twilighte.fth"
+#endif
+
+; ----------------------------------------------------------------------------
 ; Taille de la table d'init du dictionnaire en RAM (copiée en $1404 par COLD)
 DictInitTable:
         .word   DictInitTableEnd-(*+2)
@@ -7100,6 +7144,11 @@ WHERE_defer = RAM_START-2+(*-DictInitTable)
 ; ----------------------------------------------------------------------------
 #ifdef WITH_CH376
 #include "CH376.voc"
+#endif
+
+; ----------------------------------------------------------------------------
+#ifdef WITH_TWILIGHTE
+#include "Twilighte.fth"
 #endif
 
 DictInitTableEnd:

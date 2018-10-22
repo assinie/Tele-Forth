@@ -66,3 +66,5 @@ LE62D:
 -last_forth_word_nfa = CLOCK_nfa
 
 #endif
+
+#endif

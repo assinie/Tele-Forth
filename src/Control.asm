@@ -452,6 +452,25 @@ END_nfa:
 -last_forth_word_nfa = END_nfa
 #endif
 
+#ifdef WITH_EXIT
+#echo "Ajout du mot EXIT"
+
+EXIT_nfa:
+        .byte $84
+        .byte "EXI","T"+$80
+        .word   last_forth_word_nfa
+        .word *+2
+
+        pla
+        sta IP
+        pla
+        sta IP+1
+        jmp NEXT
+
+-last_forth_word_nfa = EXIT_nfa
+
+#endif
+
 #else
 #error "*** Fichier Control.asm déjà inclus!"
 #endif

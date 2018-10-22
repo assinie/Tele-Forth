@@ -391,7 +391,7 @@ UNLINK_nfa:
         .word   PlusOVLOAD_nfa
         .word   DOCOL
         .word   LIT
-        .word   RAM_START+27389
+        .word   $7F01                                                           ; RAM_START+27389
         .word   SPat
         .word   CONTEXT
         .word   AT

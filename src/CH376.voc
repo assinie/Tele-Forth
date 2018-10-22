@@ -319,7 +319,7 @@ SetFilename:
         .word COUNT
 #else
 	.word LIT
-	.word $0518
+	.word bufnom+1
 	.word LIT
 	.word $0C
 	.word DTRAILING
@@ -450,9 +450,9 @@ FileOpen:
 #ifndef CH376_OLD
 ;	0517 0548 C@ 1- 1 AND 0260 * 0B40 + 0D CMOVE ;
         .word LIT
-        .word $0517
+        .word bufnom
 	.word LIT
-	.word $0548
+	.word ficnum
 	.word CAT
 	.word ONES
 	.word ONE
@@ -470,6 +470,25 @@ FileOpen:
         .word SEMIS
 
 -last_ch376_word_nfa = FileOpen_nfa
+
+
+; ----------------------------------------------------------------------------
+FileCreate_nfa:
+        .byte $8A
+        .byte "FileCreat","e"+$80
+        .word last_ch376_word_nfa
+FileCreate:
+        .word DOCOL
+        .word LIT
+        .word $34
+        .word LIT
+        .word ch376_command
+        .word STORE
+        .word GetStatus
+        .word SEMIS
+
+-last_ch376_word_nfa = FileCreate_nfa
+
 ; ----------------------------------------------------------------------------
 ;#ifdef WITH_AUTOSTART_SUPPORT
 #echo "Ajout du mot FileClose [CH376]"
@@ -654,6 +673,47 @@ ReadUSB_nfa:
 
 
 ; ----------------------------------------------------------------------------
+; Code récupéré de la version Forth-83
+; ( addr n -- )
+; ----------------------------------------------------------------------------
+#ifdef NEED_UPPER
+#echo "Ajout du mot UPPER"
+UPPER_nfa:
+        .byte $85
+        .byte "UPPE","R"+$80
+	.word last_forth_word_nfa
+UPPER:
+        .word *+2
+.(
+        lda     #$02
+        jsr     SETUP
+        ldy     N
+L1459:
+        cpy     #$00
+        beq     L1468
+        dey
+        lda     (N+2),y
+        jsr     L146B
+        sta     (N+2),y
+        clv
+        bvc     L1459
+L1468:
+        jmp     NEXT
+
+; ----------------------------------------------------------------------------
+L146B:
+        cmp     #$61
+        bcc     L1476
+        cmp     #$7B
+        bcs     L1476
+        sec
+        sbc     #$20
+L1476:
+        rts
+
+.)
+-last_forth_word_nfa = UPPER_nfa
+#endif
 
 ; ----------------------------------------------------------------------------
 ; Pour support STARTUP / AUTOSTART
@@ -668,6 +728,12 @@ FILENAME:
 .(
         .word DOCOL
         .word COUNT
+
+; Conversion min/MAJ
+; Si on le fait ici, on modifie la source
+;        .word TWODUP
+;        .word UPPER
+
         .word DUP
         .word LIT
         .word $0C
@@ -676,13 +742,30 @@ FILENAME:
         .word $89
         .word QERROR
         .word LIT
-        .word $0518
+        .word bufnom+1
         .word SWAP
         .word OVER
         .word LIT
         .word $0D
         .word BLANKS
+
+#ifdef WITH_UPERCASE_FILENAME
+#echo "Force les noms fichiers en MAJUSCULE"
+        ; Pour conversion min/MAJ
+        .word TWODUP
+        .word TOR
+        .word TOR
+
         .word CMOVE
+
+        ; Conversion min/MAJ
+        .word RFROM
+        .word RFROM
+        .word UPPER
+#else
+        .word CMOVE
+#endif
+
         .word SEMIS
 .)
 
@@ -891,19 +974,54 @@ LEA81:
 #ifdef WITH_AUTOSTART_SUPPORT
 #echo "Ajout du support autostart (fichier: AUTOSTART_FILE)"
 
+; L'existence du CH376 a déjà été vérifiée,
+
+; On vérifie que la clé est montée, dnas le cas contraire, on la monte
+; GetStaus 14 = DUP 0= IF DROP SetUSB Mount DROP GetStatus 14 = THEN IF 2 ARGV ...
+; [--
+        .word GetStatus
+        .word LIT
+        .word $0014
+        .word EQUAL
+        .word DUP
+        .word ZEQUAL
+        .word ZBRANCH
+        .word CleOK
+        .word DROP
+; --]
+
+; - TEST -
+; Si on suppose que la cle n'a pas été montée
+; Après Mount, le répertoire courant est "/"
 	.word SetUSB
 	.word Mount
-	.word DROP								; Modifier 'Mount' pour qu'il ne fasse pas le 340 C@
+	.word DROP								; Modifier 'Mount' pour qu'il ne fasse pas le 340 C@ mais GetStatus
 	.word GetStatus
 	.word LIT
 	.word $14
 	.word EQUAL
+CleOK:
 	.word ZBRANCH
 	.word LEAFF
 
+; Si on ne fait pas le Mount:
+;        Si on n'a pas exécuter au préalable au moins une commande Orix qui utilise la clé (ls par exemple)
+;          alors la clé n'est pas montée, il faudra donc faire un Mount pour que les accès disque fonctionne
+;        Sinon, si on démarre le Forth par une commande 'bank n', le répertoire du CH376 courant est correct (ie celui de Orix)
+;          si on démarre le Forth par un commande dans /BIN alors le répertoire courant du CH376 est /BIN et non celui de Orix
+
+; Si le Mount n'a pas été fait, GetStatus renvoie $5F (ABORT)
+
 #ifdef WITH_ARGV
 ;        2 argv DUP IF DUP HERE C! HERE 1+ SWAP CMOVE HERE ELSE 2DROP LIT" STARTUP.DAT" THEN ;
-        .word TWO
+
+; - TEST -
+        ; 2 si on lance le Forth par: bank 3 <nom_fichier>
+        ; 0 (ou1?) si on le lance par: <nom_fichier>
+        ; Si 0 (ou 1?) et qu'on lance le Forth par la commande 'bank 3', on essaye de charger le fichier 'bank' depuis le répertoire courant de Orix
+;        .word TWO
+        .word ZERO
+
         .word ARGV
         .word DUP
         .word ZBRANCH
@@ -964,8 +1082,13 @@ LEAFF:
 #ifdef WITH_AUTOSTART_SUPPORT
 #echo "Ajout des mots (DOS), DOS [CH376]"
 ; ----------------------------------------------------------------------------
-; : (DOS) DUP XOPEN = IF DROP FileOpen 14 = 0= 81
-;       ELSE DROP 1 1C ;
+; : (DOS) DUP XOPEN = IF DROP SetFilename FileOpen 14 = 0= 81
+;       ELSE DUP XSAVE = IF DROP SetFilename FileCreate DROP (XSAVE) 82
+;            ELSE DUP XLOAD = IF DROP SetFilename FileOpen DROP (XLOAD) 82
+;                 ELSE DROP 1 1C
+;                 THEN
+;            THEN
+;       THEN ;
 ;
 ; Si on veut une compatibilité avec (DOS) du Stratsed:
 ; : (DOS) DUP XOPEN IF DROP FileOpen 14 = 1 *
@@ -975,7 +1098,7 @@ LEAFF:
 PDOS_nfa:
 	.byte $85
 	.byte "(DOS",")"+$80
-	.word last_forth_word_nfa
+	.word last_ch376_word_nfa
 PDOS:
 .(
         .word DOCOL
@@ -984,8 +1107,9 @@ PDOS:
         .word XOPEN
         .word EQUAL
         .word ZBRANCH
-        .word ZZelse
+        .word ZZsave
         .word DROP
+        .word SetFilename
         .word FileOpen
         .word LIT
         .word $14
@@ -995,6 +1119,46 @@ PDOS:
         .word $81
         .word BRANCH
         .word ZZend
+
+ZZsave
+        .word DUP
+        .word LIT
+        .word XSAVE
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZload
+        .word DROP
+        .word SetFilename
+
+        ; /!\ Attention pas de vérification de l'existence du fichier
+        ; le fichier sera écrasé si il existe déjà
+        .word FileCreate
+        ; /!\ Pas de vérification du code de retoure
+        .word DROP
+
+        .word PXSAVE
+        .word LIT
+        .word $82
+        .word BRANCH
+        .word ZZend
+
+ZZload
+        .word DUP
+        .word LIT
+        .word XLOAD
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZelse
+        .word DROP
+        .word SetFilename
+        .word FileOpen
+        .word DROP
+        .word PXLOAD
+        .word LIT
+        .word $82
+        .word BRANCH
+        .word ZZend
+
 ZZelse
         .word DROP
         .word ONE
@@ -1003,7 +1167,7 @@ ZZelse
 ZZend
         .word SEMIS
 .)
-
+-last_ch376_word_nfa = PDOS_nfa
 
 ; ----------------------------------------------------------------------------
 ; DOS
@@ -1011,7 +1175,7 @@ ZZend
 DOS_nfa:
 	.byte $83
 	.byte "DO","S"+$80
-	.word PDOS_nfa
+	.word last_forth_word_nfa
 DOS:
         .word DOCOL
         .word PDOS
@@ -1034,7 +1198,11 @@ RSLW:
         .word DOCOL
         .word ZBRANCH
         .word ZZelse
-        .word ONES
+; - TEST -
+; Pour le calcul de l'offset dans le fichier
+; on soustrait 1 au n° de bloc pour commencer à 0
+;        .word ONES
+
         .word read
         .word ZEQUAL
         .word ZBRANCH
@@ -1045,7 +1213,11 @@ ZZthen:
         .word BRANCH
         .word ZZend
 ZZelse:
-        .word ONES
+; - TEST -
+; Pour le calcul de l'offset dans le fichier
+; on soustrait 1 au n° de bloc pour commencer à 0
+;        .word ONES
+
         .word write
         .word DOT
 ZZend:
@@ -1068,11 +1240,11 @@ ZZend:
 #define INT_DISK_WRITE $1E
 #define ABORT $5F
 
-XLOAD_nfa:
-        .byte $85
-        .byte "XLOA","D"+$80
+PXLOAD_nfa:
+        .byte $87
+        .byte "(XLOAD",")"+$80
         .word last_ch376_word_nfa
-XLOAD:
+PXLOAD:
         .word *+2
 .(
 ; Entrée: desalo contient l'adresse de chargement
@@ -1104,26 +1276,39 @@ XLOAD:
 
 ZZ0002
     jsr ReadUSBData2
-    bcs ReadNextChunk
-    tya
-    adc $d0
-    sta $d0
-    bcc ReadNextChunk
-    inc $d0+1
+;    bcc ReadNextChunk
+; Si on arrive ici, RdUSBData0 à indiqué qu'il n'y avait plus rien à lire
+; Il faudrait peut-être lire le statut pour voir si il y a eu une erreur
+; et sortir de toute façon
 ReadNextChunk
     jsr ByteRdGo
     beq ZZ0002
+    ; Sauvegarde du code de fin
+    pha
+    ; Fermeture du fichier sans modification
+    lda #$00
     jsr _FileClose
+    ; Vérifier le code de retour pour la fermeture? ($14 -> Z=1 -> Ok)
+
     lda $d0
     sta fisalo
-    lda $d1
+    lda $d0+1
     sta fisalo+1
+
+    pla
+    cmp #INT_SUCCESS
+    beq PXLOAD_Fin
+    lda #$02
+    .byte $2c
+
+PXLOAD_Fin
     lda #$00
     jmp PUSH0A
 
 ReadUSBData2:
     stx _XSAVE
     sec
+    ; RdUSBData0
     lda #$27
     sta ch376_command
     ldx ch376_data
@@ -1135,6 +1320,13 @@ ZZZ003
     iny
     dex
     bne ZZZ003
+    ; Ajuste le pointeur $D0-$D1
+    clc
+    tya
+    adc $d0
+    sta $d0
+    bcc *+4
+    inc $d1
     clc
 ZZZ002
     ldx _XSAVE
@@ -1144,8 +1336,113 @@ Error
     lda #$02
     jmp PUSH0A
 
--last_ch376_word_nfa = XLOAD_nfa
 
+-last_ch376_word_nfa = PXLOAD_nfa
+
+; ------------------------------------------------------------------------------
+;
+; ------------------------------------------------------------------------------
+PXSAVE_nfa:
+        .byte $87
+        .byte "(XSAVE",")"+$80
+        .word last_ch376_word_nfa
++PXSAVE:
+        .word *+2
+.(
+; Faire FILENAME SetFilename FileCreate avant l'appel
+; et mettre à jour desalo et fisalo
+    stx     AYX_addr+2                                                         ; Sauvegarde X ici parce que SetByteWrite utilise _XSAVE
+    lda desalo
+    sta $d0
+    lda desalo+1
+    sta $d1
+
+    ; Calcul de la taille de la zone
+    sec
+    lda fisalo
+    sbc desalo
+;    tax
+    pha
+    lda fisalo+1
+    sbc desalo+1
+    tay
+    pla
+    jsr SetByteWrite
+    ; bne erreur
+    jsr WriteRqData
+    tax
+
+    ldy #$00
+loop
+    lda ($d0),y
+    sta ch376_data
+    iny
+    dex
+    bne loop
+
+;    Verifier GetStatus == $51?, Non-> erreur
+
+    ; Ajuste le pointeur $D0-$D1
+    clc
+    tya
+    adc $d0
+    sta $d0
+    bcc *+4
+    inc $d1
+
+    jsr ByteWrGo
+    bcs erreur2
+;    jsr WriteRqData
+    tax
+    beq PXSAVE_Fin
+    bne loop-2
+    ; Si on arrive ici
+    ; $d0 est revenu à 0!!!
+erreur1
+    ldx #$01
+    .byte $2c
+
+erreur2
+    cmp #INT_SUCCESS
+    beq PXSAVE_Fin
+    tax
+    .byte $2c
+
+PXSAVE_Fin
+    ldx #$00
+
+    lda #$01
+    jsr _FileClose
+    ; Vérifier le code de retour de FileClose?
+
+    txa
+    ldx     AYX_addr+2
+    jmp PUSH0A
+;    rts
+
+
+ByteWrGo
+    ; ByteWrGo renvoie:
+    ;    - INT_DISK_WRITE si il faut encore écrire
+    ;    - INT_SUCCESS si on a atteint la valeur indiquée par le SetByteWrite
+    lda #$3d
+    sta ch376_command
+    jsr _WaitResponse
+    cmp #INT_DISK_WRITE
+    beq WriteRqData
+    sec
+    rts
+
+WriteRqData
+    lda #$2d
+    sta ch376_command
+    lda ch376_data
+    clc
+    rts
+
+.)
+
+-last_ch376_word_nfa = PXSAVE_nfa
 
 ; ==============================================================================
 
@@ -1215,9 +1512,11 @@ _FileClose
 SetByteRead
 	PHA
 	LDA #$3A
-	.byte $2c
+;	.byte $2c
+	bne CH376_Cmd2
 
 SetByteWrite
+	pha
 	lda #$3C
 
 CH376_Cmd2
@@ -1240,6 +1539,262 @@ ByteRdGo
 
 .)
 ;---------------------------------------------------------------------------
+
+SALOSTORE_nfa
+        .byte $85
+        .byte "SALO","!"+$80
+        .word last_forth_word_nfa
+SALOSTORE
+        .word DOCOL
+        .word LIT
+        .word vasalo0
+        .word STORE
+        .word LIT
+        .word fisalo
+        .word STORE
+        .word LIT
+        .word desalo
+        .word STORE
+        .word SEMIS
+
+-last_forth_word_nfa = SALOSTORE_nfa
+
+
+;---------------------------------------------------------------------------
+DOLSAVE_nfa:
+        .byte $85
+        .byte "$SAV","E"+$80
+        .word last_forth_word_nfa
+DOLSAVE:
+        .word DOCOL
+        .word ZERO
+        .word SALOSTORE
+        .word LIT
+        .word $40
+        .word LIT
+        .word ftype
+        .word CSTORE
+
+        ; On ouvre le fichier
+        ; /!\ Il faut au moins avoir fait un FILENAME avant
+        ; pour mettre le bom du fichier en $517...
+;        .word SetFilename
+;        .word FileOpen
+;        .word DROP
+;
+;        .word PXSAVE
+        .word LIT
+        .word XSAVE
+        .word DOS
+        .word SEMIS
+
+-last_forth_word_nfa = DOLSAVE_nfa
+
+;---------------------------------------------------------------------------
+DOLLOAD_nfa:
+        .byte $85
+        .byte "$LOA","D"+$80
+        .word last_forth_word_nfa
+DOLLOAD:
+        .word DOCOL
+        .word ZERO
+        .word LIT
+        .word $8080
+        .word SALOSTORE
+
+        ; On ouvre le fichier
+        ; /!\ Il faut au moins avoir fait un FILENAME avant
+        ; pour mettre le bom du fichier en $517...
+;        .word SetFilename
+;        .word FileOpen
+;        .word DROP
+;
+;        .word PXLOAD
+        .word LIT
+        .word XLOAD
+        .word DOS
+        .word LIT
+        .word fisalo
+        .word AT
+        .word SEMIS
+
+-last_forth_word_nfa = DOLLOAD_nfa
+
+
+;---------------------------------------------------------------------------
+; ( adr -- b )
+; b:1 -> ok
+; b:0 -> erreur
+;
+; : ?DIR FILENAME CH376 SetFilename FileOpen ( DUP 14 = IF FileClose THEN 41 = ) 41 = 0 FileClose DROP ;
+
+QDIR_nfa:
+        .byte $84
+        .byte "?DI","R"+$80
+        .word last_forth_word_nfa
+QDIR:
+.(
+        .word DOCOL
+        .word FILENAME
+        .word SetFilename
+        .word FileOpen
+        .word LIT
+        .word $41
+        .word EQUAL
+        ; [-- A voir si le FileClose est nécessaire
+        ; .word FileClose
+        ; .word DROP
+        ; --]
+        .word SEMIS
+.)
+-last_forth_word_nfa = QDIR_nfa
+
+;---------------------------------------------------------------------------
+; cd <path>
+; : cd TIB @ IN @ + C@ ASCII / = IF LIT" /" ?DIR 0= 82 ?ERROR THEN BEGIN ASCII / WORD HERE 1+ C@ WHILE HERE ?DIR 0= 91 ?ERROR REPEAT CR ;
+CD_nfa:
+        .byte $82
+        .byte "C","D"+$80
+        .word last_forth_word_nfa
+CD:
+.(
+        .word DOCOL
+        .word TIB
+        .word AT
+        .word IN
+        .word AT
+        .word PLUS
+        .word CAT
+        .word LIT
+        .word "/"
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZ_Then
+        .word PLITQ
+        .byte $01
+        .byte "/"
+        .word QDIR
+        .word ZEQUAL
+        .word LIT
+        .word $82
+        .word QERROR
+ZZ_Then:
+ZZ_Begin
+        .word LIT
+        .word "/"
+        .word WORD
+        .word HERE
+        .word ONEP
+        .word CAT
+        .word ZBRANCH
+        .word ZZ_Repeat
+; WHILE
+        .word HERE
+        .word QDIR
+        .word ZEQUAL
+        .word LIT
+        .word $91
+        .word QERROR
+        .word BRANCH
+        .word ZZ_Begin
+ZZ_Repeat
+        .word CR
+        .word SEMIS
+.)
+-last_forth_word_nfa = CD_nfa
+
+;---------------------------------------------------------------------------
+; addr : Adresse d'une chaine terminée par un \0
+;
+; addr cd
+;
+; DUP C@ ASCII / = IF
+;	LIT" /" ?DIR 0= 82 ?ERROR
+; THEN
+; BEGIN
+;	ASCII / ENCLOSE DUP
+; WHILE
+;	( adresse_buffer offset_debut longueur offset_suivant )
+;	>R
+;	OVER - HERE C!
+;	OVER + HERE 1+ HERE C@  ( 2DUP 1+ ERASE ) CMOVE
+;	R> +
+;	HERE ?DIR 0= 91 ?ERROR
+; REPEAT
+; 2DROP 2DROP
+;
+PCD_nfa:
+        .byte $84
+        .byte "(CD",")"+$80
+        .word last_forth_word_nfa
+PCD:
+.(
+        .word DOCOL
+        .word DUP
+        .word CAT
+        .word LIT
+        .word "/"
+        .word EQUAL
+        .word ZBRANCH
+        .word ZZ_Then
+        .word PLITQ
+        .byte $01
+        .byte "/"
+        .word QDIR
+        .word ZEQUAL
+        .word LIT
+        .word $82
+        .word QERROR
+ZZ_Then:
+ZZ_Begin
+        .word LIT
+        .word "/"
+        .word ENCLOSE
+        .word DUP
+        .word ZBRANCH
+        .word ZZ_Repeat
+; WHILE
+;	>R
+;	OVER - HERE C!
+;	OVER + HERE 1+ HERE C@  ( 2DUP 1+ ERASE ) CMOVE
+;	R> +
+;	HERE ?DIR 0= 91 ?ERROR
+
+        .word TOR
+        .word OVER
+        .word SUB
+        .word HERE
+        .word CSTORE
+        .word OVER
+        .word PLUS
+        .word HERE
+        .word ONEP
+        .word HERE
+        .word CAT
+
+        .word TWODUP
+        .word ONEP
+        .word ERASE
+
+        .word CMOVE
+        .word RFROM
+        .word PLUS
+        .word HERE
+        .word QDIR
+        .word ZEQUAL
+        .word LIT
+        .word $91
+        .word QERROR
+        .word BRANCH
+        .word ZZ_Begin
+ZZ_Repeat
+	.word TWODROP
+	.word TWODROP
+	.word SEMIS
+
+.)
+-last_forth_word_nfa = PCD_nfa
+
 #else
 #echo "Ajout entête du vocabulaire CH376"
 
@@ -1251,4 +1806,143 @@ CH376_voc = RAM_START-2+(*-DictInitTable)
 #endif
 
 #endif
+; --------------
+#ifdef TTT
+HEX
 
+: SALO! vsalo0 ! fisalo ! desalo ! ;
+
+: $LOAD 0 8080 SALO! XLOAD DOS fisalo @ ;
+
+: XLOAD
+    SetFilename FileOpen
+    14 = IF
+        FF SetByteRead
+        BEGIN
+            ReadUSBData2 IF incrémente_dest_addr THEN
+        ByteRdGo UNTIL
+        FileClose
+    ELSE
+    THEN
+;
+; Faire la sauvegarde de X avant l'appel?
+; ([A-D]-)?([A-Z0-9]{,9})(.[A-Z0-9]{,3})?
+
+	jsr Charget
+	php		; Sauvegarde P
+	cmp #$61	; <'a'?
+	bcc d3ac	; <'a' -> fin
+	cmp #$7b
+	bcs d3ac	; >'z'+1 -> fin
+	and #$df	; 1101 1111 -> conversion minMAJ
+d3ac
+	plp		; Restaure P
+	rts
+
+Charget
+	inc $e9
+	bne chargot
+	inc $ea
+Chargot
+	lda xx
+	cmp #" "
+	beq Charget
+	jsr ecb9
+	rts
+;
+; Sortie: Z=1 -> fin d'instruction (\00 ou ':')
+;	C=0 -> [0-9]
+;	C=1 -> [A-Z]
+;
+ecb9
+	cmp #$c8
+	beq fin
+	cmp #$27	; "'"
+	beq fin
+	cmp #$3a	; '9'+1
+	bcs fin
+	sec
+	sbc #$30	; '0'
+	sec
+	sbc #$d0	; $100-'0'
+fin
+	rts
+
+XNOMFI:
+        lda     AYX_addr+2							; Longueur (X)
+	bne suite
+	rts									; Longueur nulle
+suite
+	; stx _XSAVE
+	cmp #13
+	bcs longueur
+	tax
+        lda     AYX_addr
+        sta $D0
+        lda     AYX_addr+1
+        sta $d1
+	ldy #$ff
+boucle:
+	iny
+	lda ($D0),y
+	sta bufnom,y
+	;beq fin
+	cmp #'.'
+	beq extension
+	cmp #'*'
+	beq wild
+	dex
+	bne boucle
+;
+; Ici, pas d'extension trouvée
+; Ajouter l'extension par défaut
+; ftype := 08 -> .DAT
+; ftype := 40 -> .COM
+	iny
+	lda #"."
+	sta bufnom,y
+
+sans_extension:
+	lda ftype
+	rol
+	bmi dotcom
+
+	ldx #$03
+boucle3:
+	lda datext,x
+	sta bufnom,y
+	iny
+	dex
+	bne boucle3
+	beq ok
+
+; Longueur incorrecte
+longueur:
+	ldx #$89								; 'Fichier incorrect'
+	rts
+
+extension:
+	cpx #$04								; >=4?
+	bcs longueur
+	cpx #01
+	beq sans_extension
+boucle2:
+	iny
+	lda ($d0),y
+	sta bufnom,y
+	cmp #'*'
+	beq wild
+	dex
+	bne boucle2
+ok:
+	clc
+	.byte $24								; bit $38
+wild:
+	sec
+	ldx #01
+	rts
+comext:
+	.asc "moc"
+datext
+	.asc "tad"
+#endif
