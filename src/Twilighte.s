@@ -1,11 +1,14 @@
 ; ----------------------------------------------------------------------------
-; Extensions pour la carte Twilighte
+; Twilghte.s:
+; ----------------------------------------------------------------------------
+;				Extensions pour la carte Twilighte
+; ----------------------------------------------------------------------------
 
 .ifdef With::TWILIGHTE
 
 	.ifndef Included::TWILIGHTE_INC
 		Included::TWILIGHTE_INC = 1
-		.out "Ajout des extensions TWILIGHTE"
+		verbose 3, "Ajout des extensions TWILIGHTE"
 
 		; ----------------------------------------------------------------------------
 		; (BANK)
@@ -109,13 +112,13 @@
 
 	.else
 
-		.out "Ajout defers extensions TWILIGHTE"
+		verbose 3, "Ajout defers extensions TWILIGHTE"
 
 		EXBNK           = $040C
 		VEXBNK          = $0414
 		BNKCIB          = $0417
 
-		.out .sprintf("Ajout defer BANK -> $%04x", *)
+		verbose 3, .sprintf("Ajout defer BANK -> $%04x", *)
 
 		BANK_defer:
 		        lda BOT,x
@@ -128,7 +131,7 @@
 
 		VIA2_IORA = $0321
 
-		.out .sprintf("Ajout defer BANKSTR -> $%04x", *)
+		verbose 3, .sprintf("Ajout defer BANKSTR -> $%04x", *)
 
 		BANKSTR_defer:
 		        ; Sauvegarde P

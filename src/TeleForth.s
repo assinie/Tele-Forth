@@ -19,7 +19,7 @@
 ;
 ; ----------------------------------------------------------------------------
 
-.out .sprintf("Compilation TeleForth %d.%d",With::VERSION_MAJ, With::VERSION_MIN)
+verbose 2, .sprintf("Compilation TeleForth %d.%d",With::VERSION_MAJ, With::VERSION_MIN)
 
 ; ----------------------------------------------------------------------------
 ;
@@ -39,7 +39,7 @@
 		.undef AUTOSTART_FILE
 		.define AUTOSTART_FILE "FORTH.DAT"
 	.endif
-	.out .sprintf("Fichier AUTOSTART: %s", AUTOSTART_FILE)
+	verbose 2, .sprintf("Fichier AUTOSTART: %s", AUTOSTART_FILE)
 .endif
 
 .ifdef With::EXTERNAL_HELPERS
@@ -170,6 +170,30 @@ NEED_ABORT .set 1
 
 .ifdef With::UPPER
 	NEED_UPPER .set 1
+.endif
+
+.ifdef With::LOWER
+	NEED_LOWER .set 1
+.endif
+
+.ifndef With::DictCase
+	.warning "DictCase non spécifié, valeur par defaut: 0"
+	With::DictCase .set 0
+.endif
+
+.if With::CaseSensitive = 0
+	.if With::DictCase = 0
+		.warning "CaseSentive = 0 && DictCase = 0"
+
+	.elseif With::DictCase =1
+		NEED_LOWER .set 1
+
+	.elseif With::DictCase =2
+		NEED_UPPER .set 1
+
+	.else
+		.error .sprintf("Valeur incorrecte pour DictCase: %d", With::DictCase)
+	.endif
 .endif
 
 .ifdef With::STRATSED
@@ -734,7 +758,7 @@ declare "0BRANCH","ZBRANCH"
         .word   ZBRANCH_pfa
 
 ; ----------------------------------------------------------------------------
-;BRANCH:
+; BRANCH
 ; ----------------------------------------------------------------------------
 declare "BRANCH"
         .word   BRANCH_pfa
@@ -796,7 +820,7 @@ LC1E0:
         jmp     NEXT
 
 ; ----------------------------------------------------------------------------
-;LEAVE:
+; LEAVE
 ; ----------------------------------------------------------------------------
 declare "LEAVE"
         .word   LEAVE_pfa
@@ -2944,88 +2968,7 @@ LCFD2:
 
 
 .ifdef With::DECOMPILER
-	; ----------------------------------------------------------------------------
-	; Mini décompilateur
-	; ----------------------------------------------------------------------------
-	.out "Ajout du mini décompilateur"
-
-	; ----------------------------------------------------------------------------
-	; \C
-	; ----------------------------------------------------------------------------
-	declare "\C", "backslash_C"
-	        .word   DOCOL
-	        .word   DUP
-	        .word   UDOT
-	        .word   WCOUNT
-	        .word   TWOP
-	        .word   NFA
-	        .word   IDDOT
-	        .word   SEMIS
-
-	; ----------------------------------------------------------------------------
-	; \L
-	; ----------------------------------------------------------------------------
-	declare "\L", "backslash_L"
-	        .word   DOCOL
-	        .word   DUP
-	        .word   UDOT
-	        .word   WCOUNT
-	        .word   DOT
-	        .word   SEMIS
-
-	; ----------------------------------------------------------------------------
-	; \S<space>
-	; /?\ "\S " fait bien 3 caractères mais la longeur indiquée est: $82!
-	; ----------------------------------------------------------------------------
-	declare "\S ", "backslash_S"
-	        .word   DOCOL
-	        .word   DUP
-	        .word   UDOT
-	        .word   COUNT
-	        .word   LIT
-	        .word   $22
-	        .word   EMIT
-	        .word   TWODUP
-	        .word   TYPE
-	        .word   LIT
-	        .word   $22
-	        .word   EMIT
-	        .word   BL
-	        .word   EMIT
-	        .word   PLUS
-	        .word   SEMIS
-
-	; ----------------------------------------------------------------------------
-	; \J
-	; ----------------------------------------------------------------------------
-	declare "\J", "backslash_J"
-	        .word   DOCOL
-	        .word   DUP
-	        .word   UDOT
-	        .word   WCOUNT
-	        .word   DUP
-	        .word   UDOT
-	        .word   AT
-	        .word   TWOP
-	        .word   NFA
-	        .word   IDDOT
-	        .word   SEMIS
-	; ----------------------------------------------------------------------------
-	; \D
-	; ----------------------------------------------------------------------------
-	declare "\D", "backslash_D"
-	        .word   DOCOL
-	        .word   OVER
-	        .word   UDOT
-	        .word   ZERO
-	        .word   PDO
-	LD04A:
-	        .word   COUNT
-	        .word   DOT
-	        .word   PLOOP
-	        .word   LD04A
-	        .word   SEMIS
-
+	.include "Decomplier.s"
 .endif
 
 ; ----------------------------------------------------------------------------
@@ -3142,6 +3085,26 @@ declare "-FIND","DFIND"
         .word   BL
         .word   WORD
         .word   HERE
+
+	;
+	; Conversion MAJUSCULES/minuscules
+	; pour la recherche dans le dictionnaire
+	;
+	.if With::CaseSensitive = 0
+		;.word   CAPS
+		;.word   AT
+		;.word   ZBRANCH
+		;.word   LDFIND_SUITE
+	        .word   DUP
+		.word   COUNT
+		.if With::DictCase = 1
+			.word   LOWER
+	        .else
+			.word UPPER
+	        .endif
+	        ;LDFIND_SUITE:
+	.endif
+
         .word   CONTEXT
         .word   AT
         .word   AT
@@ -3301,133 +3264,123 @@ declare 'LIT"', "LITQ", immediate
 ; Message d'erreur
 ; ----------------------------------------------------------------------------
 MSG:
-        .byte   $00,$0A
-        .byte   "pas trouve"
+        .byte   $00
+        pstring   "pas trouve"
 
-        .byte   $01,$09
-        .byte   "pile vide"
+        .byte   $01
+        pstring "pile vide"
 
-        .byte   $02,$12
-        .byte   "dictionnaire plein"
+        .byte   $02
+        pstring "dictionnaire plein"
 
-        .byte   $03,$1A
-        .byte   "mode d'adressage incorrect"
+        .byte   $03
+        pstring "mode d'adressage incorrect"
 
-        .byte   $04,$0A
-        .byte   "(redefini)"
+        .byte   $04
+        pstring "(redefini)"
 
-        .byte   $05,$1B
-        .byte   "inconnu dans ce vocabulaire"
+        .byte   $05
+        pstring "inconnu dans ce vocabulaire"
 
-        .byte   $07,$0B
-        .byte   "pile pleine"
+        .byte   $07
+        pstring "pile pleine"
 
-        .byte   $0A,$1A
-        .byte   "OVSAVE: compiler deux fois"
+        .byte   $0A
+        pstring "OVSAVE: compiler deux fois"
 
-        .byte   $0B,$17
-        .byte   "OVSAVE: utiliser OV6502"
+        .byte   $0B
+        pstring "OVSAVE: utiliser OV6502"
 
-        .byte   $0D,$1A
-        .byte   "la base doit etre decimale"
+        .byte   $0D
+        pstring "la base doit etre decimale"
 
 
-.ifndef With::CH376
-	        .byte   $0F,$20
-	        .byte   "TELE-FORTH V1.2 - Thierry BESTEL"
-.else
-	.define MSG015 .sprintf("TELE-FORTH V%d.%d - Christian Lardiere",With::VERSION_MAJ, With::VERSION_MIN)
+	.ifndef With::CH376
+	        .byte   $0F
+	        pstring "TELE-FORTH V1.2 - Thierry BESTEL"
+	.else
 	        .byte $0F
-	        .byte .strlen(MSG015)
-	        .byte MSG015
-.endif
-
-        .byte   $11,$17
-        .byte   "en definition seulement"
-
-        .byte   $12,$19
-        .byte   "hors definition seulement"
-
-        .byte   $13,$16
-        .byte   "controles mal appaires"
-
-        .byte   $14,$15
-        .byte   "definition incomplete"
-
-        .byte   $15,$14
-        .byte   "dictionnaire protege"
-
-        .byte   $16,$14
-        .byte   "sur disque seulement"
-
-        .byte   $17,$0D
-        .byte   "lignes 0 a 15"
-
-        .byte   $18,$17
-        .byte   "declarer un vocabulaire"
-
-        .byte   $1C,$11
-        .byte   "valeur incorrecte"
-
-        .byte   $81,$12
-        .byte   "Fichier inexistant"
-
-        .byte   $82,$0D
-        .byte   "Erreur disque"
-
-        .byte   $83,$10
-        .byte   "Fichier existant"
-
-        .byte   $84,$10
-        .byte   "Disquette pleine"
-
-        .byte   $85,$12
-        .byte   "Disquette protegee"
-
-        .byte   $86,$0E
-        .byte   "Erreur de type"
-
-        .byte   $87,$16
-        .byte   "Disquette non STRATSED"
-
-        .byte   $88,$0F
-        .byte   "Pas de STRATSED"
-
-        .byte   $89,$18
-        .byte   "Nom de fichier incorrect"
-
-        .byte   $8A,$0E
-        .byte   "Lecteur absent"
-
-.ifndef With::CH376
-	        .byte   $FE,$2B
-	        .byte   "TELE-FORTH V1.2",$0D,$0A,"genere avec TELE-ASS V1.0a"
+	        pstring .sprintf("TELE-FORTH V%d.%d - Christian Lardiere",With::VERSION_MAJ, With::VERSION_MIN)
+	.endif
 
 
-	        .byte   $FF,$32
-	        .byte   "Base sur TELE-FORTH V1.1 ",$0D,$0A,"de Christophe LAVARENNE"
-.else
-		.define MSG145 "Repertoire inexistant"
+        .byte   $11
+        pstring "en definition seulement"
+
+        .byte   $12
+        pstring "hors definition seulement"
+
+        .byte   $13
+        pstring "controles mal appaires"
+
+        .byte   $14
+        pstring "definition incomplete"
+
+        .byte   $15
+        pstring "dictionnaire protege"
+
+        .byte   $16
+        pstring "sur disque seulement"
+
+        .byte   $17
+        pstring "lignes 0 a 15"
+
+        .byte   $18
+        pstring "declarer un vocabulaire"
+
+        .byte   $1C
+        pstring "valeur incorrecte"
+
+        .byte   $81
+        pstring "Fichier inexistant"
+
+        .byte   $82
+        pstring "Erreur disque"
+
+        .byte   $83
+        pstring "Fichier existant"
+
+        .byte   $84
+        pstring "Disquette pleine"
+
+        .byte   $85
+        pstring "Disquette protegee"
+
+        .byte   $86
+        pstring "Erreur de type"
+
+        .byte   $87
+        pstring "Disquette non STRATSED"
+
+        .byte   $88
+        pstring "Pas de STRATSED"
+
+        .byte   $89
+        pstring "Nom de fichier incorrect"
+
+        .byte   $8A
+        pstring "Lecteur absent"
+
+
+	.ifndef With::CH376
+	        .byte   $FE
+	        pstring .sprintf("TELE-FORTH V1.2%c%cgenere avec TELE-ASS V1.0a",$0D,$0A)
+
+	        .byte   $FF
+	        pstring .sprintf("Base sur TELE-FORTH V1.1 %c%cde Christophe LAVARENNE",$0D,$0A)
+	.else
 	        .byte $91
-	        .byte .strlen(MSG145)
-	        .byte MSG145
+		pstring "Repertoire inexistant"
 
-		.define MSG147 "Repertoire existant"
 	        .byte $93
-	        .byte .strlen(MSG147)
-	        .byte MSG147
+		pstring "Repertoire existant"
 
-		.define MSG254 .sprintf("TELE-FORTH V%d.%d%c%cgenere avec xa v2.3.8", With::VERSION_MAJ, With::VERSION_MIN,$0D,$0A)
 	        .byte $FE
-	        .byte .strlen(MSG254)
-	        .byte MSG254
+		pstring .sprintf("TELE-FORTH V%d.%d%c%cgenere avec xa v2.3.8", With::VERSION_MAJ, With::VERSION_MIN,$0D,$0A)
 
-		.define MSG255 .sprintf("Base sur TELE-FORTH V1.2%c%cde Thierry Bestel",$0D,$0A)
 	        .byte $FF
-	        .byte .strlen(MSG255)
-	        .byte MSG255
-.endif
-
+		pstring .sprintf("Base sur TELE-FORTH V1.2%c%cde Thierry Bestel",$0D,$0A)
+	.endif
 
 
 .ifndef With::COMPACT
@@ -3680,7 +3633,7 @@ LD6D4:
         .word   MESSAGE
         .word   SPstore
 .ifdef With::WHERE
-		.out "Ajout du support WHERE pour ERROR"
+		verbose 2, "Ajout du support WHERE pour ERROR"
 	        .word   BLK
 	        .word   AT
 	        .word   DDUP
@@ -4448,7 +4401,7 @@ declare "WARM"
 ;           Instructions IF/THEN/ELSE utilisable en mode direct
 ; ----------------------------------------------------------------------------
 .ifdef With::PSEUDO_IF
-	.out "Ajout des mots IF(, )ELSE(, )ENDIF"
+	verbose 2, "Ajout des mots IF(, )ELSE(, )ENDIF"
 	; ----------------------------------------------------------------------------
 	; IF(
 	; ----------------------------------------------------------------------------
@@ -4542,10 +4495,10 @@ declare "WARM"
 		; \
 		; ----------------------------------------------------------------------------
 		.ifndef With::BACKSLASH_IMMEDIATE
-			.out "Ajout du mot \\"
+			verbose 2, "Ajout du mot \\"
 			declare "\", "backslash"
 		.else
-			.out "Ajout du mot \\ (IMMEDIATE)"
+			verbose 2, "Ajout du mot \\ (IMMEDIATE)"
 			declare "\", "backslash", immediate
 		.endif
 	        .word   DOCOL
@@ -5270,14 +5223,14 @@ add_to_voc "FORTH"
 
 .ifdef STARTUP
 .else
-	.out "Ajout du mot STARTUP de base"
+	verbose 2, "Ajout du mot STARTUP de base"
 	; ----------------------------------------------------------------------------
 	; STARTUP
 	; ----------------------------------------------------------------------------
-	; /?\ A transférer dans Stratsed_extended.voc et CH376.voc
+	; /?\ A transférer dans Stratsed_extended.s et CH376.s
 	; et mettre ici : STARTUP ;
 	; ou definir STARTUP comme DEFER STARTUP et deinir (STARTUP) dans
-	; Stratsed_extended.voc et CH376.voc et faire ' (STARTUP) IS STARTUP
+	; Stratsed_extended.s et CH376.s et faire ' (STARTUP) IS STARTUP
 	; ----------------------------------------------------------------------------
 	declare "STARTUP"
 	        .word   DOCOL
@@ -5345,7 +5298,7 @@ add_to_voc "FORTH"
 	        .word   CSTORE
 
 	.ifdef With::AUTOSTART_SUPPORT
-		.out "Pas de autostart 'FORTH.DAT' possible"
+		verbose 2, "Pas de autostart 'FORTH.DAT' possible"
 	.endif
 
 	LEAFF:
@@ -5506,7 +5459,7 @@ add_to_voc "FORTH"
 	.include "Editor.s"
 .else
 	.ifdef With::WHERE
-		.out "Ajout mot WHERE vectorisé"
+		verbose 2, "Ajout mot WHERE vectorisé"
 
 		add_to_voc "FORTH"
 
@@ -5541,7 +5494,7 @@ add_to_voc "FORTH"
 
 
 .ifdef With::ROMend
-	.out "Ajout du mot ROMend"
+	verbose 2, "Ajout du mot ROMend"
 	; ----------------------------------------------------------------------------
 	; ROMend
 	; ----------------------------------------------------------------------------
@@ -5563,7 +5516,7 @@ add_to_voc "FORTH"
 ; Partie en RAM
 ; ----------------------------------------------------------------------------
 
-.out ""
+verbose 2, ""
 
 	; ----------------------------------------------------------------------------
 	; Taille de la table d'init du dictionnaire en RAM (copiée en $1404 par COLD)
@@ -5576,48 +5529,48 @@ add_to_voc "FORTH"
 	; ----------------------------------------------------------------------------
 	; +00 -> defer de ABORT
 	; ----------------------------------------------------------------------------
-	.out .sprintf("Ajout defer ABORT -> $%04x", *)
+	verbose 2, .sprintf("Ajout defer ABORT -> $%04x", *)
 	ABORT_defer:
 	        .word   PABORT
 
 	; ----------------------------------------------------------------------------
 	; +02 -> defer de NUMBER
 	; ----------------------------------------------------------------------------
-	.out .sprintf("Ajout defer NUMBER -> $%04x", *)
+	verbose 2, .sprintf("Ajout defer NUMBER -> $%04x", *)
 	NUMBER_defer:
 	        .word   INUMBER
 
 	; ----------------------------------------------------------------------------
 	; +04 -> defer de PROMPT
 	; ----------------------------------------------------------------------------
-	.out .sprintf("Ajout defer PROMPT -> $%04x", *)
+	verbose 2, .sprintf("Ajout defer PROMPT -> $%04x", *)
 	PROMPT_defer:
 	        .word   OK
 
 	; ----------------------------------------------------------------------------
 	; +06 -> Pour le vocabulaire FORTH
 	; ----------------------------------------------------------------------------
-	.out "Ajout entête du vocabulaire FORTH"
+	verbose 2, "Ajout entête du vocabulaire FORTH"
 	vocabulary_pfa "FORTH"
 
 	; ----------------------------------------------------------------------------
 	; +10 -> defer de QTERMINAL (initialisé à QTERM par TERMINAL)
 	; ----------------------------------------------------------------------------
-	.out .sprintf("Ajout defer ?TERMINAL -> $%04x", *)
+	verbose 2, .sprintf("Ajout defer ?TERMINAL -> $%04x", *)
 	QTERMINAL_defer:
 	        .word   NOOP
 
 	; ----------------------------------------------------------------------------
 	; +12 -> defer de KEY (initialisé à CKEY par TERMINAL)
 	; ----------------------------------------------------------------------------
-	.out .sprintf("Ajout defer KEY -> $%04x", *)
+	verbose 2, .sprintf("Ajout defer KEY -> $%04x", *)
 	KEY_defer:
 	        .word   NOOP
 
 	; ----------------------------------------------------------------------------
 	; +14 -> defer de EMIT (initialisé à CEMIT par TERMINAL)
 	; ----------------------------------------------------------------------------
-	.out .sprintf("Ajout defer EMIT -> $%04x", *)
+	verbose 2, .sprintf("Ajout defer EMIT -> $%04x", *)
 	EMIT_defer:
 	        .word   NOOP
 
@@ -5663,7 +5616,7 @@ add_to_voc "FORTH"
 		.include "Editor.s"
 	.else
 		.ifdef With::WHERE
-			.out "Ajout ' (WHERE) IS WHERE"
+			verbose 2, "Ajout ' (WHERE) IS WHERE"
 			; WHERE_defer = RAM_START-2+(*-DictInitTable)
 			WHERE_defer:
 			        .word PWHERE
@@ -5716,28 +5669,28 @@ last_forth_word_nfa .set FORTH_last_word_nfa
 last_voc_link2 .set last_voc_link
 ; ----------------------------------------------------------------------------
 
-.out ""
-.out ""
-.out .sprintf("TeleForth %d.%d - %s",With::VERSION_MAJ,With::VERSION_MIN, __DATE__)
-.out          "----------------------------"
-.out .sprintf("ROM          : $%04x - $%04x", $C000, *)
-.out .sprintf("Used         : $%04x", * - ORIGIN)
-.out .sprintf("Free         : $%04x", $fff8-*)
-.out          "          --- ---"
-.out .sprintf("UAREA        : $%04x", _UAREA_)
-.out .sprintf("DOSBUFFERS   : $%04x", DOSBUFFERS)
-.out .sprintf("FIRST        : $%04x", _FIRST)
-.out .sprintf("LIMIT        : $%04x", RAM_START)
+verbose 1, ""
+verbose 1, ""
+verbose 1, .sprintf("TeleForth %d.%d - %s",With::VERSION_MAJ,With::VERSION_MIN, __DATE__)
+verbose 1,          "----------------------------"
+verbose 1, .sprintf("ROM          : $%04x - $%04x", $C000, *)
+verbose 1, .sprintf("Used         : $%04x", * - ORIGIN)
+verbose 1, .sprintf("Free         : $%04x", $fff8-*)
+verbose 1,          "          --- ---"
+verbose 1, .sprintf("UAREA        : $%04x", _UAREA_)
+verbose 1, .sprintf("DOSBUFFERS   : $%04x", DOSBUFFERS)
+verbose 1, .sprintf("FIRST        : $%04x", _FIRST)
+verbose 1, .sprintf("LIMIT        : $%04x", RAM_START)
 
-.out .sprintf("Dictionary   : $%04x - $%04x", RAM_START, RAM_END)
+verbose 1, .sprintf("Dictionary   : $%04x - $%04x", RAM_START, RAM_END)
 
-.out          "----------------------------"
-.out ""
-.out ""
+verbose 1,          "----------------------------"
+verbose 1, ""
+verbose 1, ""
 
 ; ----------------------------------------------------------------------------
 .if * > $fff8
-	.out .sprintf("Erreur fichier trop long %d", _err_)
+	.error .sprintf("Erreur fichier trop long %d", _err_)
 .endif
  .res $fff8-*, $00
 

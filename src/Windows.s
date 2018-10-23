@@ -1,10 +1,13 @@
 ; ----------------------------------------------------------------------------
-; Vocabulaire WINDOWS
+; Windows.s:
+; ----------------------------------------------------------------------------
+;				Vocabulaire WINDOWS
+; ----------------------------------------------------------------------------
 
 .ifdef With::WINDOWS_VOC
 
 	.ifdef Included::WINDOWS
-		.out "Ajout entête du vocabulaire WINDOWS"
+		verbose 3, "Ajout entête du vocabulaire WINDOWS"
 
 		; ----------------------------------------------------------------------------
 		; WINDOWS
@@ -12,7 +15,7 @@
 			vocabulary_pfa "WINDOWS"
 
 	.else
-		.out "Ajout du vocabulaire WINDOWS"
+		verbose 3, "Ajout du vocabulaire WINDOWS"
 		Included::WINDOWS = 1
 
 		; ----------------------------------------------------------------------------

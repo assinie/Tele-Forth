@@ -1,7 +1,7 @@
 ; ----------------------------------------------------------------------------
 ; TeleForth.mac:
 ; ----------------------------------------------------------------------------
-;				Macros
+;				Macros TeleForth
 ; ----------------------------------------------------------------------------
 
 ; ----------------------------------------------------------------------------
@@ -13,7 +13,7 @@
 	.local nfa
 	.local name, lab, flags
 
-	.out .sprintf("Ajout du mot: %s::%s -> $%04x",current_voc,word_name, *)
+	verbose 4, .sprintf("Ajout du mot: %s::%s -> $%04x",current_voc,word_name, *)
 
 	;.ifndef link
 	;	link .set 0
@@ -64,7 +64,7 @@
 	nfa .set *
 	;.ident(.sprintf("%s_last_word_nfa",current_voc)) .set *
 
-	.if 0
+	.if With::DictCase = 0
 		; Pas de modification de la casse ds mots
 		.if .strlen(name)
 			; Octet de longueur + flags SMUDGE & IMMEDIATE
@@ -80,10 +80,15 @@
 			.byte 01 | flags
 			.byte $80
 		.endif
-	.else
+
+	.elseif With::DictCase = 1
 		; On force en minuscules
 		lower name, flags
-		; upper name, flags
+
+
+	.elseif With::DictCase = 2
+		; On force en MAJUSCULES
+		upper name, flags
 	.endif
 
 	; LFA
@@ -107,7 +112,7 @@
 .endmacro
 
 ; ----------------------------------------------------------------------------
-; lower srting, flag
+; lower string, flag
 ; ----------------------------------------------------------------------------
 ;	Insère une chaine après conversion en minuscules
 ; ----------------------------------------------------------------------------
@@ -138,7 +143,7 @@
 .endmacro
 
 ; ----------------------------------------------------------------------------
-; upper srting, flag
+; upper string, flag
 ; ----------------------------------------------------------------------------
 ;	Insère une chaine après conversion en minuscules
 ; ----------------------------------------------------------------------------
@@ -168,6 +173,15 @@
 	.endif
 .endmacro
 
+; ----------------------------------------------------------------------------
+; pstring string
+; ----------------------------------------------------------------------------
+;	Insère une chaine précédée de sa longueur
+; ----------------------------------------------------------------------------
+.macro pstring string
+	.byte .strlen(string)
+	.byte string
+.endmacro
 
 ; ----------------------------------------------------------------------------
 ; code name, label, mode
@@ -237,8 +251,8 @@
 .macro vocabulary voc_name, label, mode
 	.local self
 
-	.out ""
-	.out .sprintf("Ajout du vocabulaire: %s::%s",current_voc,voc_name)
+	verbose 4, ""
+	verbose 4, .sprintf("Ajout du vocabulaire: %s::%s",current_voc,voc_name)
 
 ;	.byte voc_name
 ;	; LFA
@@ -287,8 +301,8 @@
 ;	Changement de vocabulaire
 ; ----------------------------------------------------------------------------
 .macro add_to_voc voc_name
-	.out ""
-	.out .sprintf("Back to %s from %s", voc_name, current_voc)
+	verbose 4, ""
+	verbose 4, .sprintf("Back to %s from %s", voc_name, current_voc)
 
 	.undefine current_voc
 	.define current_voc voc_name
@@ -300,7 +314,7 @@
 ;	Partie du vocabulaire placée en RAM
 ; ----------------------------------------------------------------------------
 .macro vocabulary_pfa voc_name
-	.out .sprintf("Ajout entête du vocabulaire %s -> $%04x", voc_name, *)
+	verbose 4, .sprintf("Ajout entête du vocabulaire %s -> $%04x", voc_name, *)
 
 	.ident(.sprintf("%s_voc",voc_name)) .set *
 	.byte $81,$a0
@@ -319,6 +333,18 @@
 	last_voc_link      .set $0000
 .endmacro
 
+; ----------------------------------------------------------------------------
+; verbose level, string
+; ----------------------------------------------------------------------------
+;	Affiche un message si level <= VERBOSE_LEVEL
+; ----------------------------------------------------------------------------
+.macro verbose level, string
+	.ifdef VERBOSE_LEVEL
+		.if level <= ::VERBOSE_LEVEL
+			.out string
+		.endif
+	.endif
+.endmacro
 
 ; ----------------------------------------------------------------------------
 ; Permet d'utiliser 'xxx' en plus de "xxx" pour une chaine.

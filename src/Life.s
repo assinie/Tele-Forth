@@ -1,10 +1,13 @@
 ; ----------------------------------------------------------------------------
-; Vocabulaire LIFE
+; Life.s:
+; ----------------------------------------------------------------------------
+;				Vocabulaire LIFE
+; ----------------------------------------------------------------------------
 
 .ifdef With::LIFE_VOC
 
 	.ifdef Included::LIFE
-		.out "Ajout entête du vocabulaire LIFE"
+		verbose 3, "Ajout entête du vocabulaire LIFE"
 
 		; ----------------------------------------------------------------------------
 		; LIFE
@@ -12,7 +15,7 @@
 		vocabulary_pfa "LIFE"
 
 	.else
-		.out "Ajout du dictionaire LIFE"
+		verbose 3, "Ajout du dictionaire LIFE"
 		Included::LIFE = 1
 
 
@@ -275,9 +278,9 @@
 		        .word   SEMIS
 
 		; ----------------------------------------------------------------------------
-		; .mLEN
+		; mLEN
 		; ----------------------------------------------------------------------------
-		declare "mLEN", "DOTmLET"
+		declare "mLEN", "mLEN"
 		        .word   DOCOL
 		        .word   CCOLL
 		        .word   LCOLC
@@ -295,7 +298,7 @@
 		        .word   DUP
 		        .word   ROT
 		        .word   STORE
-		        .word   DOTmLET
+		        .word   mLEN
 		        .word   DUP
 		        .word   ALLOT
 		        .word   ERASE
@@ -478,7 +481,7 @@
 		        .word   DOCOL
 		        .word   NEWm
 		        .word   AT
-		        .word   DOTmLET
+		        .word   mLEN
 		        .word   TWODUP
 		        .word   OLDm
 		        .word   AT

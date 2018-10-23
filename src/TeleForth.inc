@@ -1,3 +1,9 @@
+; ----------------------------------------------------------------------------
+; TeleForth.inc:
+; ----------------------------------------------------------------------------
+;				Fonctions Telemon
+; ----------------------------------------------------------------------------
+
 ; Fichier (appels StratSed sauf XNOMFI: appe Telemon)
 XOPEN  = $1A                                   ; Ouvre un fichier, nom dans BUFNOM ($0517-$0522), numéro logique dans FICNUM ($0548)
 XCLOSE = $1D                                   ; Ferme le fichier FICNUM

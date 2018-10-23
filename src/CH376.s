@@ -1,11 +1,14 @@
 ; ----------------------------------------------------------------------------
-; Extensions pour le CH376
+; CH376.s:
+; ----------------------------------------------------------------------------
+;				Extensions pour le CH376
+; ----------------------------------------------------------------------------
 
 .ifdef With::CH376
 
 	.ifndef Included::CH376_INC
 		Included::CH376_INC = 1
-		.out "Ajout du vocabulaire CH376"
+		verbose 3, "Ajout du vocabulaire CH376"
 
 
 		;---------------------------------------------------------------------------
@@ -526,7 +529,7 @@
 
 
 		.ifdef CH376_Extended
-			.out "Ajout des mots GetVersion, ByteRdGo, ReadUSB [CH376]"
+			verbose 3, "Ajout des mots GetVersion, ByteRdGo, ReadUSB [CH376]"
 			; ----------------------------------------------------------------------------
 			; 1 ch376: GetVersion
 			; ----------------------------------------------------------------------------
@@ -604,7 +607,7 @@
 			; ----------------------------------------------------------------------------
 			; lower
 			; ----------------------------------------------------------------------------
-			code "lower", "LOWER"
+			code "LOWER"
 			.proc lower_local
 			        lda     #$02
 			        jsr     SETUP
@@ -624,7 +627,7 @@
 			L146B:
 			        cmp     #$41
 			        bcc     L1476
-			        cmp     #$7B
+			        cmp     #$5B
 			        bcs     L1476
 			        clc
 			        adc     #$20
@@ -663,7 +666,7 @@
 		        .word BLANKS
 
 			.ifdef With::UPERCASE_FILENAME
-				.out "Force les noms fichiers en MAJUSCULE"
+				verbose 3, "Force les noms fichiers en MAJUSCULE"
 			        ; Pour conversion min/MAJ
 			        .word TWODUP
 			        .word TOR
@@ -778,7 +781,7 @@
 		; ----------------------------------------------------------------------------
 		; STARTUP
 		; ----------------------------------------------------------------------------
-		.out "Ajout du mot STARTUP avec suppport CH376";
+		verbose 3, "Ajout du mot STARTUP avec suppport CH376"
 		declare "STARTUP"
 		.proc STARTUP_local
 		        .word   DOCOL
@@ -845,7 +848,7 @@
 		        .word   CSTORE
 
 			.ifdef With::AUTOSTART_SUPPORT
-				.out .sprintf("Ajout du support autostart (fichier: %s)", AUTOSTART_FILE)
+				verbose 3, .sprintf("Ajout du support autostart (fichier: %s)", AUTOSTART_FILE)
 
 				; L'existence du CH376 a déjà été vérifiée,
 
@@ -949,7 +952,7 @@
 
 		;.ifdef CH376_Extended
 		.ifdef With::AUTOSTART_SUPPORT
-			.out "Ajout des mots (DOS), DOS [CH376]"
+			verbose 3, "Ajout des mots (DOS), DOS [CH376]"
 			add_to_voc "CH376"
 			; ----------------------------------------------------------------------------
 			; : (DOS) DUP XOPEN = IF DROP SetFilename FileOpen 14 = 0= 81
@@ -1618,7 +1621,7 @@
 		.endproc
 
 	.else
-		.out "Ajout entête du vocabulaire CH376"
+		verbose 3, "Ajout entête du vocabulaire CH376"
 
 		; ----------------------------------------------------------------------------
 		; CH376

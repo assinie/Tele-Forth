@@ -1,4 +1,6 @@
 ; ----------------------------------------------------------------------------
+; Control.s:
+; ----------------------------------------------------------------------------
 ;                         Structures de contrôle
 ; ----------------------------------------------------------------------------
 ; test IF action_vrai ELSE action_faux ENDIF|THEN
@@ -14,7 +16,7 @@
 
 	.ifndef Included::CONTROL
 		Included::CONTROL = 1
-		.out "Ajout de mots pour tests/boucles"
+		verbose 3, "Ajout de mots pour tests/boucles"
 
 
 		.ifdef NEED_MRKFROM

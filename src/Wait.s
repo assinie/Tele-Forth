@@ -1,14 +1,17 @@
 ; ----------------------------------------------------------------------------
-; Extensions WAIT
+; Wait.s:
+; ----------------------------------------------------------------------------
+;				Extensions WAIT
+; ----------------------------------------------------------------------------
 
 .ifdef With::WAIT
 
 	.ifdef Included::WAIT
-		.error "*** Fichier Wait.voc déjà inclus!"
+		.error "*** Fichier Wait.s déjà inclus!"
 
 	.else
 		Included::WAIT = 1
-		.out "Ajout du mot WAIT"
+		verbose 3, "Ajout du mot WAIT"
 
 		; ----------------------------------------------------------------------------
 		; WAIT

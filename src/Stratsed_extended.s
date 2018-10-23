@@ -1,5 +1,8 @@
 ; ----------------------------------------------------------------------------
-; Extensions pour le Stratsed
+; Stratsed_extended.s:
+; ----------------------------------------------------------------------------
+;				Extensions pour le Stratsed
+; ----------------------------------------------------------------------------
 
 .ifdef With::STRATSED
 
@@ -7,7 +10,7 @@
 		Included::STRATSED_EXTENDED = 1
 
 
-		.out "Ajout du support STRATSED (full)"
+		verbose 3, "Ajout du support STRATSED (full)"
 
 		; ----------------------------------------------------------------------------
 		; DRIVE
@@ -345,7 +348,7 @@
 		; ----------------------------------------------------------------------------
 		; STARTUP
 		; ----------------------------------------------------------------------------
-		.out "Ajout du mot STARTUP avec support StratSed"
+		verbose 3, "Ajout du mot STARTUP avec support StratSed"
 		declare "STARTUP"
 		        .word   DOCOL
 		        .word   LIT
@@ -411,7 +414,7 @@
 		        .word   CSTORE
 
 			.ifdef With::AUTOSTART_SUPPORT
-				.out "Ajout du support autostart (fichier: AUTOSTART_FILE)"
+				verbose 3, "Ajout du support autostart (fichier: AUTOSTART_FILE)"
 			        .word   LIT
 			        .word   FRW
 			        .word   LIT
@@ -501,6 +504,6 @@
 		        .word   SEMIS
 
 	.else
-		.error "*** Fichier Stratsed_extended.voc déjà inclus!"
+		.error "*** Fichier Stratsed_extended.s déjà inclus!"
 	.endif
 .endif

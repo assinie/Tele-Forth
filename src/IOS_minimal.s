@@ -1,10 +1,13 @@
 ; ----------------------------------------------------------------------------
-; Vocabulaire IOS (minimal)
+; IOS_minimal.s:
+; ----------------------------------------------------------------------------
+;				Vocabulaire IOS (minimal)
+; ----------------------------------------------------------------------------
 
 .ifdef With::IOS_VOC
 
 	.ifdef Included::IOS
-		.out "Ajout entête du vocabulaire IOS"
+		verbose 3, "Ajout entête du vocabulaire IOS"
 
 		; ----------------------------------------------------------------------------
 		; IOS
@@ -12,7 +15,7 @@
 		vocabulary_pfa "IOS"
 
 	.else
-		.out "Ajout du vocabulaire IOS"
+		verbose 3, "Ajout du vocabulaire IOS"
 		Included::IOS= 1
 
 		; ----------------------------------------------------------------------------

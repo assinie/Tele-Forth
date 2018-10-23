@@ -1,5 +1,8 @@
 ; ----------------------------------------------------------------------------
-; Extensions pour le Stratsed (Minimal)
+; Stratsed_minimal.s:
+; ----------------------------------------------------------------------------
+;				Extensions pour le Stratsed (Minimal)
+; ----------------------------------------------------------------------------
 
 
 .ifdef With::STRATSED_MINIMAL
@@ -7,7 +10,7 @@
 	.ifndef Included::STRATSED_MINIMAL
 		Included::STRATSED_MINIMAL = 1
 
-		.out "Ajout du support STRATSED (minimal)"
+		verbose 3, "Ajout du support STRATSED (minimal)"
 
 		; ----------------------------------------------------------------------------
 		; (DOS)
@@ -182,5 +185,5 @@
 
 
 	.else
-		.error "*** Fichier Stratsed_minimal.voc déjà inclus!"
+		.error "*** Fichier Stratsed_minimal.s déjà inclus!"
 .endif

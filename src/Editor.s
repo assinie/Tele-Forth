@@ -1,10 +1,13 @@
 ; ----------------------------------------------------------------------------
-; Vocabulaire EDITOR
+; Editor.s
+; ----------------------------------------------------------------------------
+;				Vocabulaire EDITOR
+; ----------------------------------------------------------------------------
 
 .ifdef With::EDITOR_VOC
 
 	.ifdef Included::EDITOR
-		.out "Ajout entête du vocabulaire EDITOR"
+		verbose 3, "Ajout entête du vocabulaire EDITOR"
 
 		; ----------------------------------------------------------------------------
 		; EDITOR

@@ -1,14 +1,17 @@
 ; ----------------------------------------------------------------------------
-; Modules externes
+; Externals.s:
+; ----------------------------------------------------------------------------
+;				Modules externes
+; ----------------------------------------------------------------------------
 
 .ifdef With::EXTERNAL_HELPERS
 
 	.ifdef Included::EXTERNALS_INC
-		.error "*** Fichier Externals.voc déjà inclus!"
+		.error "*** Fichier Externals.s déjà inclus!"
 
 	.else
 		Included::EXTERNALS_INC = 1
-		.out "Ajout commandes externes EDIT, ASSEMBLER, CODE, ;CODE"
+		verbose 3, "Ajout commandes externes EDIT, ASSEMBLER, CODE, ;CODE"
 
 		; ----------------------------------------------------------------------------
 		; EDIT

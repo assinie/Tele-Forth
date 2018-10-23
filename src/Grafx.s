@@ -1,10 +1,13 @@
 ; ----------------------------------------------------------------------------
-; Vocabulaire GRAFX
+; Grafx.s:
+; ----------------------------------------------------------------------------
+;				Vocabulaire GRAFX
+; ----------------------------------------------------------------------------
 
 .ifdef With::GRAFX_VOC
 
 	.ifdef Included::GRAFX
-		.out "Ajout entête du vocabulaire GRAFX"
+		verbose 3, "Ajout entête du vocabulaire GRAFX"
 
 		; ----------------------------------------------------------------------------
 		; GRAFX
@@ -12,7 +15,7 @@
 		vocabulary_pfa "GRAFX"
 
 	.else
-		.out "Ajout du dictionaire GRAFX"
+		verbose 3, "Ajout du dictionaire GRAFX"
 		Included::GRAFX = 1
 
 		; ----------------------------------------------------------------------------

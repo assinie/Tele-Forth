@@ -1,14 +1,17 @@
 ; ----------------------------------------------------------------------------
-; Extensions CLOCK
+; Clock.s:
+; ----------------------------------------------------------------------------
+;				Extensions CLOCK
+; ----------------------------------------------------------------------------
 
 .ifdef With::CLOCK
 
 	.ifdef Included::CLOCK
-		.error "*** Fichier Clock.voc déjà inclus!"
+		.error "*** Fichier Clock.s déjà inclus!"
 
 	.else
 		Included::CLOCK = 1
-		.out "Ajout du mot CLOCK"
+		verbose 3, "Ajout du mot CLOCK"
 
 		; ----------------------------------------------------------------------------
 		; CLOCK

@@ -1,8 +1,11 @@
 ; ----------------------------------------------------------------------------
-; Support Overlays (vocabulaire FORTH)
+; Overlays.s:
+; ----------------------------------------------------------------------------
+;				Support Overlays (vocabulaire FORTH)
+; ----------------------------------------------------------------------------
 
 .ifdef With::OVERLAYS_SUPPORT
-	.out "Ajout gestion OVERLAYS"
+	verbose 3, "Ajout gestion OVERLAYS"
 
 	add_to_voc "FORTH"
 

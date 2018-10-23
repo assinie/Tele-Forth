@@ -1,7 +1,7 @@
 AS = ca65
 LD = ld65
 LDFLAGS = -t none -Ln TeleForth.sym
-ASFLAGS = -t none -l TeleForth.lst
+ASFLAGS = -t none -l TeleForth.lst -D VERBOSE_LEVEL=$(VERBOSE)
 
 #  -v --debug-info --list-bytes 0 -t none -l TeleForth.lst -m TeleForth.map -Ln TeleForth.sym TeleForth.s
 # sed -re 's/al 00(.{4}) \.(.+)$/\1 \2/' TeleForth.sym | sort > TeleForth.sym
@@ -10,6 +10,8 @@ ROM = TeleForth
 
 VERSION ?= 2
 STARTUP ?= STARTUP.DAT
+VERBOSE ?= 0
+
 
 all: $(ROM)
 
@@ -37,7 +39,7 @@ deps: .depend
 
 
 .depend: TeleForth.s build.inc
-	$(AS) --create-dep .depend $<
+	$(AS) $(ASFLAGS) --create-dep .depend $<
 
 
 clean:

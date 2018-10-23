@@ -1,10 +1,13 @@
 ; ----------------------------------------------------------------------------
-; Vocabulaire SOUNDS
+; Sounds.s:
+; ----------------------------------------------------------------------------
+;				Vocabulaire SOUNDS
+; ----------------------------------------------------------------------------
 
 .ifdef With::SOUNDS_VOC
 
 	.ifdef Included::SOUNDS
-		.out "Ajout entête du vocabulaire SOUNDS"
+		verbose 3, "Ajout entête du vocabulaire SOUNDS"
 
 		; ----------------------------------------------------------------------------
 		; SOUNDS
@@ -12,7 +15,7 @@
 		vocabulary_pfa "SOUNDS"
 
 	.else
-		.out "Ajout du dictionaire SOUNDS"
+		verbose 3, "Ajout du dictionaire SOUNDS"
 		Included::SOUNDS = 1
 
 		; ----------------------------------------------------------------------------

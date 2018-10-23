@@ -1,12 +1,15 @@
 ; ----------------------------------------------------------------------------
-; Extensions du vocabulaire IOS
+; IOS_extended.s
+; ----------------------------------------------------------------------------
+;				Extensions du vocabulaire IOS
+; ----------------------------------------------------------------------------
 
 .ifdef With::IOSext_VOC
 
 	.ifdef Included::IOS_EXTENDED
 
 		.ifdef MINITEL
-			.out "Ajout defer MINITEL"
+			verbose 3, "Ajout defer MINITEL"
 
 			MINITEL_defer:
 			        .word   NOOP
@@ -23,7 +26,7 @@
 		; Gestion port imprimante
 		; ----------------------------------------------------------------------------
 		.ifdef With::IOS_PRINTER
-			.out "Ajout des extensions IOS/Imprimante"
+			verbose 3, "Ajout des extensions IOS/Imprimante"
 
 			; ----------------------------------------------------------------------------
 			; TSTLP
@@ -81,7 +84,7 @@
 		; Gestion port série
 		; ----------------------------------------------------------------------------
 		.ifdef With::IOS_SERIAL
-			.out "Ajout des extensions IOS/Serie"
+			verbose 3, "Ajout des extensions IOS/Serie"
 
 			; ----------------------------------------------------------------------------
 			; SDUMP
@@ -167,7 +170,7 @@
 		; Gestion Minitel
 		; ----------------------------------------------------------------------------
 		.ifdef With::IOS_MINITEL
-			.out "Ajout des extensions IOS/Minitel"
+			verbose 3, "Ajout des extensions IOS/Minitel"
 
 
 			; ----------------------------------------------------------------------------

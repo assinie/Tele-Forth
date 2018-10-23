@@ -1,3 +1,9 @@
+; ----------------------------------------------------------------------------
+; Configs.inc:
+; ----------------------------------------------------------------------------
+;				Configurations
+; ----------------------------------------------------------------------------
+
 ; --------------------------------------------------------------
 ; Configuration pour TeleForth V2.0                      (Ch376)
 ; --------------------------------------------------------------
@@ -5,6 +11,10 @@
 
 	VERSION_MAJ = 2
 	VERSION_MIN = 0
+
+	; Dictionnaire en minuscules
+	DictCase .Set 1
+	CaseSensitive .set 0
 
 	; Deplace les variables vasalo,... après PIO_addr pour éviter la collision avec
 	; Orix (pour pouvoir récupérer le PATH courant)
@@ -44,8 +54,8 @@
 	;
 	; Force les noms de fichiers en MAJUSCULES
 	UPERCASE_FILENAME .set 1
-	;.define WITH_UPPER
-	;.define WITH_LOWER
+	; UPPER .set 1
+	; LOWER .set 1
 	;
 	ARGV .set 1
 	;
@@ -123,6 +133,10 @@
 
 	VERSION_MAJ = 2
 	VERSION_MIN = 0
+
+	; Dictionnaire en minuscules
+	DictCase .Set 1
+	CaseSensitive .set 0
 
 	; Deplace les variables vasalo,... après PIO_addr pour éviter la collision avec
 	; Orix (pour pouvoir récupérer le PATH courant)
@@ -240,6 +254,10 @@
 .scope TeleForth_V1
 	VERSION_MAJ = 1
 	VERSION_MIN = 2
+
+	; Dictionnaire sans modification de casse
+	DictCase .Set 0
+	CaseSensitive .set 1
 
 	Page05_Base = $0500
 
