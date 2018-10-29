@@ -6,7 +6,7 @@ ASFLAGS = -t none -l TeleForth.lst -D VERBOSE_LEVEL=$(VERBOSE)
 #  -v --debug-info --list-bytes 0 -t none -l TeleForth.lst -m TeleForth.map -Ln TeleForth.sym TeleForth.s
 # sed -re 's/al 00(.{4}) \.(.+)$/\1 \2/' TeleForth.sym | sort > TeleForth.sym
 
-ROM = TeleForth
+ROM = TeleForth.rom
 
 VERSION ?= 2
 STARTUP ?= STARTUP.DAT
