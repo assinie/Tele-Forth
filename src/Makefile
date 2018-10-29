@@ -48,3 +48,9 @@ clean:
 
 mrproper: clean
 	rm -f $(ROM) *.lst *.sym .depend build.inc
+
+docs:
+	mkdir ../build/usr/share/man/ -p
+	mkdir ../build/usr/share/forth/ -p
+	cat ../doc/orix/forth.md | md2hlp.py > ../build/usr/share/man/forth.hlp
+	cat ../doc/orix/vlist.md | md2hlp.py > ../build/usr/share/forth/forth.hlp
