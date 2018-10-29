@@ -21,3 +21,5 @@ taper : bank 3 ou forth en ligne de commande si vous avez la rom orix à jour
 # Utilisation
 
     * lister les commandes : VLIST
+    * passer en mode hires taper : GRAFX puis HIRES
+    * passer en mode TEXT taper : GRAFX puis TEXT
