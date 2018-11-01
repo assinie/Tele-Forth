@@ -4,6 +4,14 @@
 ;				Macros TeleForth
 ; ----------------------------------------------------------------------------
 
+.scope Global
+	Words .set 0
+	Code .set 0
+	Constants .set 0
+	Users .set 0
+	Vocabularies .set 0
+.endscope
+
 ; ----------------------------------------------------------------------------
 ; declare word_name, label mode
 ; ----------------------------------------------------------------------------
@@ -14,6 +22,7 @@
 	.local name, lab, flags
 
 	verbose 4, .sprintf("Ajout du mot: %s::%s -> $%04x",current_voc,word_name, *)
+	Global::Words .set Global::Words + 1
 
 	;.ifndef link
 	;	link .set 0
@@ -189,6 +198,8 @@
 ;	Déclaration pour un mot assembleur
 ; ----------------------------------------------------------------------------
 .macro code name, label, mode
+	Global::Code .set Global::Code + 1
+
 	declare name, label, mode
 	.addr * + 2
 .endmacro
@@ -199,6 +210,8 @@
 ;	Déclaration pour un mot constante
 ; ----------------------------------------------------------------------------
 .macro constant name, label, value
+	Global::Constants .set Global::Constants + 1
+
 	declare name, label
 	; .addr DOCONSTANT
 	.addr DOCON
@@ -226,6 +239,8 @@
 ;	offset: offset dans la table USER
 ; ----------------------------------------------------------------------------
 .macro user name, label, offset
+	Global::Users .set Global::Users + 1
+
 	declare name, label
 	.addr DOUSER
 	.word offset
@@ -238,6 +253,8 @@
 ;	index: index de la variable dans la table USER
 ; ----------------------------------------------------------------------------
 .macro user_index name, label, index
+	Global::Users .set Global::Users + 1
+
 	declare name, label
 	.addr DOUSER
 	.byte index << 1
@@ -253,6 +270,8 @@
 
 	verbose 4, ""
 	verbose 4, .sprintf("Ajout du vocabulaire: %s::%s",current_voc,voc_name)
+
+	Global::Vocabularies .set Global::Vocabularies + 1
 
 ;	.byte voc_name
 ;	; LFA

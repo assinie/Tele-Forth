@@ -288,7 +288,7 @@
 		        .word CSTORE
 		        .word ONEP
 		        .word PLOOP
-			        .word ZZloop
+			.word ZZloop
 		        .word DROP
 		        .word LIT
 		        .word $00
@@ -565,7 +565,7 @@
 		; Code récupéré de la version Forth-83
 		; ( addr n -- )
 		; ----------------------------------------------------------------------------
-		.ifdef NEED_UPPER
+		.ifdef Need::UPPER
 			add_to_voc "FORTH"
 
 			; ----------------------------------------------------------------------------
@@ -601,7 +601,7 @@
 			.endproc
 		.endif
 
-		.ifdef NEED_LOWER
+		.ifdef Need::LOWER
 			add_to_voc "FORTH"
 
 			; ----------------------------------------------------------------------------
@@ -779,6 +779,14 @@
 		.endif
 
 		; ----------------------------------------------------------------------------
+		; OFFSET
+		;   -1 -> Si on lit le fichier à partir du début (BLoc 1 -> 0)
+		;    0 -> Si on saute 1 bloc au début du fichier (pour programme lancé
+		;         directement à partir de la ligne de commande (cf start.s)
+		; ----------------------------------------------------------------------------
+		user "OFFSET",,$0032
+
+		; ----------------------------------------------------------------------------
 		; STARTUP
 		; ----------------------------------------------------------------------------
 		verbose 3, "Ajout du mot STARTUP avec suppport CH376"
@@ -846,6 +854,10 @@
 		        .word   LIT
 		        .word   xfield
 		        .word   CSTORE
+
+			.word   ZERO		; Offset pour lecture/écriture := 0 bloc
+			.word   OFFSET
+			.word   STORE
 
 			.ifdef With::AUTOSTART_SUPPORT
 				verbose 3, .sprintf("Ajout du support autostart (fichier: %s)", AUTOSTART_FILE)
@@ -1003,7 +1015,7 @@
 			        ; /!\ Attention pas de vérification de l'existence du fichier
 			        ; le fichier sera écrasé si il existe déjà
 			        .word FileCreate
-			        ; /!\ Pas de vérification du code de retoure
+			        ; /!\ Pas de vérification du code de retour
 			        .word DROP
 
 			        .word PXSAVE
@@ -1064,6 +1076,9 @@
 		; Pour le calcul de l'offset dans le fichier
 		; on soustrait 1 au n° de bloc pour commencer à 0
 		;        .word ONES
+			.word OFFSET
+			.word AT
+			.word PLUS
 
 		        .word read
 		        .word ZEQUAL
@@ -1079,6 +1094,9 @@
 		; Pour le calcul de l'offset dans le fichier
 		; on soustrait 1 au n° de bloc pour commencer à 0
 		;        .word ONES
+			.word OFFSET
+			.word AT
+			.word PLUS
 
 		        .word write
 		        .word DOT
@@ -1300,7 +1318,7 @@
 		; 28 Octets
 		;---------------------------------------------------------------------------
 		_SetFilename:
-				; Copie la longueur de la chaine dans X
+			; Copie la longueur de la chaine dans X
 		        stx _XSAVE
 			tax
 

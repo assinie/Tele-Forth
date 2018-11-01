@@ -13,7 +13,13 @@
 	VERSION_MIN = 0
 
 	; Dictionnaire en minuscules
-	DictCase .Set 1
+	; Pose un pb pour la conversion des nombres de base > 10
+	; Ex. hex 1a -> 1a ? inconnu dans ce vocabulaire
+	; DictCase .Set 1
+	; CaseSensitive .set 0
+
+	; Dictionnaire en MAJUSCULES
+	DictCase .set 2
 	CaseSensitive .set 0
 
 	; Deplace les variables vasalo,... après PIO_addr pour éviter la collision avec
@@ -25,7 +31,7 @@
 	WITHOUT_FIGFORTH_BUG .set 1
 	;
 	; Décompilateur
-	;WITH_DECOMPILER .set 0
+	;DECOMPILER .set 0
 	;
 	; Extensions sonores
 	SOUNDS_VOC .set 1
@@ -67,13 +73,13 @@
 	;
 	; Support des structures de contrôle
 	ALL_TESTS .set 1
-	;.define WITH_IF_THEN_ELSE
-	;.define WITH_BEGIN_AGAIN
-	;.define WITH_BEGIN_UNTIL
-	;.define WITH_BEGIN_WHILE
-	;.define WITH_DO_LOOP
-	;.define WITH_DO_PLOOP
-	;.define WITH_CASE_OF_ENDCASE
+	;.define IF_THEN_ELSE
+	;.define BEGIN_AGAIN
+	;.define BEGIN_UNTIL
+	;.define BEGIN_WHILE
+	;.define DO_LOOP
+	;.define DO_PLOOP
+	;.define CASE_OF_ENDCASE
 	;
 	PSEUDO_IF .set 1
 	;
@@ -83,7 +89,7 @@
 	; Gestion des écrans
 	QLOADING .set 1
 	FOLLOW .set 1
-	;.define WITH_BACKSLASH
+	;.define BACKSLASH
 	BACKSLASH_IMMEDIATE .set 1
 	CSLL .set 1
 	PLINE .set 1
@@ -95,33 +101,37 @@
 	LOAD .set 1
 	;
 	OVERLAYS_SUPPORT .set 1
-	;.define WITH_EXTERNAL_HELPERS
+	;.define EXTERNAL_HELPERS
 	;
 	; OPCH, QTERM, CKEY et CEMIT nécessaires pour TERMINAL
 	IOS_VOC .set 1
-	;.define WITH_IOS_PRINTER
-	;.define WITH_IOS_SERIAL
-	;.define WITH_IOS_MINITEL
+	;.define IOS_PRINTER
+	;.define IOS_SERIAL
+	;.define IOS_MINITEL
 	;
-	;.define WITH_INPUT
-	;.define WITH_OUTPUT
+	;.define INPUT
+	;.define OUTPUT
+
+	CLS .set 1
+	GOTOXY .set 1
+
 	;
 	; Support editeur standard
 	EDITOR_VOC .set 1
 	WHERE .set 1
 	EDITOR_TEXT_LINE .set 1
-	;.define WITH_EDITOR_SCRMOVE_SCRCOPY
+	;.define EDITOR_SCRMOVE_SCRCOPY
 	;
 	; Jeu de la vie (démonstration)
-	;.define WITH_LIFE_VOC
-	;.define WITH_LIFE_DEMO
+	;.define LIFE_VOC
+	;.define LIFE_DEMO
 	;
 	; Gestion du dictionnaire
 	FORGET .set 1
 	VLIST .set 1
 	VOC_LIST .set 1
 	;
-	;.define WITH_ROMend
+	;.define ROMend
 	;
 
 .endscope
@@ -147,7 +157,7 @@
 	WITHOUT_FIGFORTH_BUG .set 1
 	;
 	; Décompilateur
-	;WITH_DECOMPILER .set 0
+	;DECOMPILER .set 0
 	;
 	; Extensions sonores
 	; SOUNDS_VOC .set 1
@@ -176,8 +186,8 @@
 	;
 	; Force les noms de fichiers en MAJUSCULES
 	UPERCASE_FILENAME .set 1
-	;.define WITH_UPPER
-	;.define WITH_LOWER
+	;.define UPPER
+	;.define LOWER
 	;
 	ARGV .set 1
 	;
@@ -189,13 +199,13 @@
 	;
 	; Support des structures de contrôle
 	; ALL_TESTS .set 1
-	;.define WITH_IF_THEN_ELSE
-	;.define WITH_BEGIN_AGAIN
-	;.define WITH_BEGIN_UNTIL
-	;.define WITH_BEGIN_WHILE
-	;.define WITH_DO_LOOP
-	;.define WITH_DO_PLOOP
-	;.define WITH_CASE_OF_ENDCASE
+	;.define IF_THEN_ELSE
+	;.define BEGIN_AGAIN
+	;.define BEGIN_UNTIL
+	;.define BEGIN_WHILE
+	;.define DO_LOOP
+	;.define DO_PLOOP
+	;.define CASE_OF_ENDCASE
 	;
 	; PSEUDO_IF .set 1
 	;
@@ -205,7 +215,7 @@
 	; Gestion des écrans
 	QLOADING .set 1
 	FOLLOW .set 1
-	;.define WITH_BACKSLASH
+	;.define BACKSLASH
 	BACKSLASH_IMMEDIATE .set 1
 	; CSLL .set 1
 	; PLINE .set 1
@@ -221,29 +231,33 @@
 	;
 	; OPCH, QTERM, CKEY et CEMIT nécessaires pour TERMINAL
 	IOS_VOC .set 1
-	;.define WITH_IOS_PRINTER
-	;.define WITH_IOS_SERIAL
-	;.define WITH_IOS_MINITEL
+	;.define IOS_PRINTER
+	;.define IOS_SERIAL
+	;.define IOS_MINITEL
 	;
-	;.define WITH_INPUT
-	;.define WITH_OUTPUT
+	; INPUT .set 1
+	; OUTPUT .set 1
+
+	; CLS .set 1
+	; GOTOXY .set 1
+
 	;
 	; Support editeur standard
 	; EDITOR_VOC .set 1
 	; WHERE .set 1
 	; EDITOR_TEXT_LINE .set 1
-	;.define WITH_EDITOR_SCRMOVE_SCRCOPY
+	;.define EDITOR_SCRMOVE_SCRCOPY
 	;
 	; Jeu de la vie (démonstration)
-	;.define WITH_LIFE_VOC
-	;.define WITH_LIFE_DEMO
+	;.define LIFE_VOC
+	;.define LIFE_DEMO
 	;
 	; Gestion du dictionnaire
 	; FORGET .set 1
-	VLIST .set 1
+	; VLIST .set 1
 	; VOC_LIST .set 1
 	;
-	;.define WITH_ROMend
+	;.define ROMend
 	;
 
 .endscope
@@ -294,13 +308,13 @@
 
 	; Support des structures de contrôle
 	ALL_TESTS .set 1
-	;.define WITH_IF_THEN_ELSE
-	;.define WITH_BEGIN_AGAIN
-	;.define WITH_BEGIN_UNTIL
-	;.define WITH_BEGIN_WHILE
-	;.define WITH_DO_LOOP
-	;.define WITH_DO_PLOOP
-	;.define WITH_CASE_OF_ENDCASE
+	;.define IF_THEN_ELSE
+	;.define BEGIN_AGAIN
+	;.define BEGIN_UNTIL
+	;.define BEGIN_WHILE
+	;.define DO_LOOP
+	;.define DO_PLOOP
+	;.define CASE_OF_ENDCASE
 
 	PSEUDO_IF .set 1
 
@@ -334,7 +348,7 @@
 
 	; Support editeur standard
 	EDITOR_VOC .set 1
-	;.define WITH_WHERE
+	;.define WHERE
 	EDITOR_TEXT_LINE .set 1
 	EDITOR_SCRMOVE_SCRCOPY .set 1
 

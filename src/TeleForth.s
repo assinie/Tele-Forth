@@ -13,355 +13,14 @@
 
 .include "build.inc"
 
-; .define With TeleForth_V2
+.include "Needs.inc"
+
 
 ; ----------------------------------------------------------------------------
 ;
 ; ----------------------------------------------------------------------------
 
 verbose 2, .sprintf("Compilation TeleForth %d.%d",With::VERSION_MAJ, With::VERSION_MIN)
-
-; ----------------------------------------------------------------------------
-;
-; ----------------------------------------------------------------------------
-
-.ifdef With::STRATSED
-	With::STRATSED_MINIMAL .set 1
-.endif
-
-;.ifdef With::AUTOSTART_SUPPORT
-; Need some OS support?
-;.define With::STRATSED
-;.endif
-
-.ifdef With::AUTOSTART_SUPPORT
-	.if .not .strlen(AUTOSTART_FILE)
-		.undef AUTOSTART_FILE
-		.define AUTOSTART_FILE "FORTH.DAT"
-	.endif
-	verbose 2, .sprintf("Fichier AUTOSTART: %s", AUTOSTART_FILE)
-.endif
-
-.ifdef With::EXTERNAL_HELPERS
-	With::OVERLAYS_SUPPORT .set 1
-.endif
-
-.ifdef With::CLOCK
-	With::WINDOWS_VOC .set 1
-	NEED_MON .set 1
-.endif
-
-.ifdef With::IOS_PRINTER
-	With::IOSext_VOC .set 1
-.endif
-
-.ifdef With::IOS_SERIAL
-	With::IOSext_VOC .set 1
-.endif
-
-.ifdef With::IOS_MINITEL
-	With::IOSext_VOC .set 1
-.endif
-
-.ifdef With::IOSext_VOC
-	With::IOS_VOC .set 1
-.endif
-
-.ifdef With::EDITOR_SCRMOVE_SCRCOPY
-	With::EDITOR .set 1
-.endif
-
-.ifdef With::EDITOR_VOC
-	With::EDITOR_TEXT_LINE .set 1
-.endif
-
-.ifdef With::LIFE_DEMO
-	With::LIFE_VOC .set 1
-.endif
-
-.ifdef With::LIFE_VOC
-	With::GRAFX_VOC .set 1
-	With::WAIT .set 1
-	With::OVERLAYS_SUPPORT .set 1
-.endif
-
-; ----------------------------------------------------------------------------
-; Structures de contrôle
-; ----------------------------------------------------------------------------
-
-.ifdef With::ALL_TESTS
-	With::CONTROL_FLOW .set 1
-
-	With::IF_THEN_ELSE .set 1
-	With::BEGIN_AGAIN .set 1
-	With::BEGIN_UNTIL .set 1
-	With::BEGIN_WHILE .set 1
-	With::DO_LOOP .set 1
-	With::DO_PLOOP .set 1
-	With::CASE_OF_ENDCASE .set 1
-.endif
-
-.ifdef With::IF_THEN_ELSE
-	With::CONTROL_FLOW .set 1
-	NEED_MRKFROM .set 1
-.endif
-
-.ifdef With::BEGIN_AGAIN
-	With::CONTROL_FLOW .set 1
-	NEED_MRKTO .set 1
-	NEED_BEGIN .set 1
-	NEED_AGAIN .set 1
-.endif
-
-.ifdef With::BEGIN_UNTIL
-	With::CONTROL_FLOW .set 1
-	NEED_MRKTO .set 1
-	NEED_BEGIN .set 1
-	NEED_UNTIL .set 1
-.endif
-
-.ifdef With::BEGIN_WHILE
-	With::CONTROL_FLOW .set 1
-	NEED_MRKFROM .set 1
-	NEED_MRKTO .set 1
-	NEED_BEGIN .set 1
-	NEED_WHILE .set 1
-	NEED_REPEAT .set 1
-.endif
-
-.ifdef With::DO_LOOP
-	With::CONTROL_FLOW .set 1
-	NEED_MRKTO .set 1
-	NEED_DO .set 1
-	NEED_LOOP .set 1
-.endif
-
-.ifdef With::DO_PLOOP
-	With::CONTROL_FLOW .set 1
-	NEED_MRKTO .set 1
-	NEED_DO .set 1
-	NEED_PLOOP .set 1
-.endif
-
-.ifdef With::CASE_OF_ENDCASE
-	With::CONTROL_FLOW .set 1
-	NEED_MRKFROM .set 1
-.endif
-
-
-; ----------------------------------------------------------------------------
-; Ajout des dépendances
-; ----------------------------------------------------------------------------
-
-NEED_ABORT .set 1
-
-
-.ifdef NEED_ABORT
-	NEED_PABORT .set 1
-.endif
-
-.ifdef With::CH376
-	NEED_LOAD .set 1
-.endif
-
-.ifdef With::UPERCASE_FILENAME
-	NEED_UPPER .set 1
-.endif
-
-.ifdef With::UPPER
-	NEED_UPPER .set 1
-.endif
-
-.ifdef With::LOWER
-	NEED_LOWER .set 1
-.endif
-
-.ifndef With::DictCase
-	.warning "DictCase non spécifié, valeur par defaut: 0"
-	With::DictCase .set 0
-.endif
-
-.if With::CaseSensitive = 0
-	.if With::DictCase = 0
-		.warning "CaseSentive = 0 && DictCase = 0"
-
-	.elseif With::DictCase =1
-		NEED_LOWER .set 1
-
-	.elseif With::DictCase =2
-		NEED_UPPER .set 1
-
-	.else
-		.error .sprintf("Valeur incorrecte pour DictCase: %d", With::DictCase)
-	.endif
-.endif
-
-.ifdef With::STRATSED
-	NEED_LOAD .set 1
-.endif
-
-.ifdef With::CSLL
-	NEED_CSLL .set 1
-.endif
-
-.ifdef With::QLOADING
-	NEED_QLOADING .set 1
-.endif
-
-.ifdef With::LOAD
-	NEED_LOAD .set 1
-.endif
-
-
-.ifndef With::EDITOR_VOC
-	;.undef With::INDEX
-	;.undef With::TRIAD
-	.ifdef With::EDITOR_SCRMOVE_SCRCOPY
-		.undef With::EDITOR_SCRMOVE_SCRCOPY
-	.endif
-	.ifdef With::EDITOR_TEXT_LINE
-		.undef With::EDITOR_TEXT_LINE
-	.endif
-.endif
-
-.ifdef With::EDITOR_VOC
-	NEED_CSLL .set 1
-	With::PLINE .set 1
-	With::LIST .set 1
-	With::DOTLINE .set 1
-	With::WHERE .set 1
-.endif
-
-.ifdef With::FOLLOW
-	NEED_QLOADING .set 1
-.endif
-
-.ifdef With::BACKSLASH_IMMEDIATE
-	With::BACKSLASH .set 1
-.endif
-
-.ifdef With::BACKSLASH
-	NEED_QLOADING .set 1
-	NEED_CSLL .set 1
-.endif
-
-.ifdef With::INDEX
-	With::DOTLINE .set 1
-	NEED_QTERMSTOP .set 1
-.endif
-
-.ifdef With::TRIAD
-	With::LIST .set 1
-	NEED_QTERMSTOP .set 1
-.endif
-
-.ifdef With::LIST
-	With::DOTLINE .set 1
-	NEED_QTERMSTOP .set 1
-.endif
-
-.ifdef With::VLIST
-	NEED_QTERMSTOP .set 1
-.endif
-
-.ifdef With::DOTLINE
-	With::PLINE .set 1
-.endif
-
-.ifdef With::PLINE
-	NEED_CSLL .set 1
-.endif
-
-.ifdef With::CLOCK
-	NEED_AYX .set 1
-.endif
-
-.ifdef With::GRAFX_VOC
-	NEED_AYX .set 1
-.endif
-
-.ifdef With::IOS_VOC
-	NEED_AYX .set 1
-.endif
-
-.ifdef With::SOUNDS_VOC
-	NEED_AYX .set 1
-.endif
-
-.ifdef With::STRATSED
-	NEED_AYX .set 1
-.endif
-
-.ifdef With::WINDOWS_VOC
-	NEED_AYX .set 1
-.endif
-
-
-.ifdef With::INPUT
-	NEED_PIO .set 1
-.endif
-
-.ifdef With::OUTPUT
-	NEED_PIO .set 1
-.endif
-
-.ifdef NEED_PABORT
-	NEED_PIO .set 1
-.endif
-
-.ifdef NEED_QTERMSTOP
-	NEED_PIO .set 1
-.endif
-
-
-.ifdef With::GRAFX_VOC
-	NEED_MON .set 1
-.endif
-
-.ifdef With::IOS_VOC
-	NEED_MON .set 1
-.endif
-
-.ifdef With::SOUNDS_VOC
-	NEED_MON .set 1
-.endif
-
-.ifdef With::STRATSED
-	NEED_MON .set 1
-	NEED_PIO .set 1
-.endif
-
-.ifdef With::WINDOWS_VOC
-	NEED_MON .set 1
-.endif
-
-
-.ifdef With::IOSExt_VOC
-	NEED_MONCOL .set 1
-	NEED_PIO .set 1
-.endif
-
-.ifdef With::GRAFX_VOC
-	NEED_MONCOL .set 1
-.endif
-
-.ifdef With::SOUNDS_VOC
-	NEED_MONCOL .set 1
-.endif
-
-
-.ifdef With::GRAFX_VOC
-	NEED_HRSCOL .set 1
-.endif
-
-.ifdef With::SOUNDS_VOC
-	NEED_HRSCOL .set 1
-.endif
-
-.ifdef With::OVERLAYS_SUPPORT
-	NEED_HIMEM .set 1
-.endif
-
 
 ; ----------------------------------------------------------------------------
 ; Adresses RAM
@@ -2968,7 +2627,7 @@ LCFD2:
 
 
 .ifdef With::DECOMPILER
-	.include "Decomplier.s"
+	.include "Decompiler.s"
 .endif
 
 ; ----------------------------------------------------------------------------
@@ -3604,7 +3263,7 @@ LD6AA:
 ; ----------------------------------------------------------------------------
 declare "ABORT"
         .word   DODEFER
-	.word ABORT_defer
+	.word   ABORT_defer
 
 ; ----------------------------------------------------------------------------
 ; ERROR
@@ -4273,7 +3932,7 @@ declare "EMIT"
 EMIT_pfa:
         .word   EMIT_defer
 
-.ifdef NEED_PABORT
+.ifdef Need::PABORT
 	; ----------------------------------------------------------------------------
 	; (ABORT)
 	; ----------------------------------------------------------------------------
@@ -4385,14 +4044,6 @@ declare "WARM"
 ; ----------------------------------------------------------------------------
 ;                         Structures de contrôle
 ; ----------------------------------------------------------------------------
-; test IF action_vrai ELSE action_faux ENDIF|THEN
-; BEGIN boucle AGAIN
-; BEGIN boucle test UNTIL|END
-; BEGIN test WHILE boucle REPEAT
-; fin+1 ini DO boucle LOOP
-; fin+1 ini DO boucle increment +LOOP
-; CASE selecteur choix1 OF action1 ENDOF choix2 OF action2 ...action_defaut ENDCASE
-; ----------------------------------------------------------------------------
 .ifdef With::CONTROL_FLOW
 	.include "Control.s"
 .endif
@@ -4473,7 +4124,7 @@ declare "WARM"
 ; ----------------------------------------------------------------------------
 ;                    Gestion chargement d'un écran
 ; ----------------------------------------------------------------------------
-	.ifdef NEED_QLOADING
+	.ifdef Need::QLOADING
 
 		; ----------------------------------------------------------------------------
 		; ?LOADING
@@ -4495,10 +4146,10 @@ declare "WARM"
 		; \
 		; ----------------------------------------------------------------------------
 		.ifndef With::BACKSLASH_IMMEDIATE
-			verbose 2, "Ajout du mot \\"
+			verbose 2, "Ajout du mot \"
 			declare "\", "backslash"
 		.else
-			verbose 2, "Ajout du mot \\ (IMMEDIATE)"
+			verbose 2, "Ajout du mot \ (IMMEDIATE)"
 			declare "\", "backslash", immediate
 		.endif
 	        .word   DOCOL
@@ -4536,7 +4187,7 @@ declare "WARM"
 
 	.endif
 
-	.ifdef NEED_LOAD
+	.ifdef Need::LOAD
 		; ----------------------------------------------------------------------------
 		; LOAD
 		; ----------------------------------------------------------------------------
@@ -4614,7 +4265,7 @@ declare "WARM"
 	; ----------------------------------------------------------------------------
 	; Utilisé par LIST, TRIAD, INDEX, VLIST
 	; ----------------------------------------------------------------------------
-	.ifdef NEED_QTERMSTOP
+	.ifdef Need::QTERMSTOP
 		; ----------------------------------------------------------------------------
 		; ?TERMSTOP
 		; ----------------------------------------------------------------------------
@@ -4644,7 +4295,7 @@ declare "WARM"
 ; ----------------------------------------------------------------------------
 ;                    Gestion affichage d'un écran
 ; ----------------------------------------------------------------------------
-.ifdef NEED_CSLL
+.ifdef Need::CSLL
 	; ----------------------------------------------------------------------------
 	; C/L
 	; ----------------------------------------------------------------------------
@@ -5014,7 +4665,7 @@ declare "WARM"
 ; TeleForth signature
 ; ----------------------------------------------------------------------------
 teleforth_signature:
-.ifdef TELEFORTH_V12
+.ifndef With::CH376
         .byte   "TELE-FORTH V1.2"
 
         .byte   $0D,$0A
@@ -5022,11 +4673,10 @@ teleforth_signature:
         .byte   $0D,$0A,$00
 .else
         .byte   .sprintf("TELE-FORTH V%d.%d (ch376) - %s", With::VERSION_MAJ, With::VERSION_MIN, __DATE__)
-;        .byte   .sprintf("TELE-FORTH V%d.%d (ch376) - %s",VERSION_MAJ,VERSION_MIN, __DATE__)
         .byte $00
 .endif
 
-.ifdef NEED_AYX
+.ifdef Need::AYX
 	; ----------------------------------------------------------------------------
 	; AYX
 	; ----------------------------------------------------------------------------
@@ -5036,7 +4686,7 @@ teleforth_signature:
 .endif
 
 
-.ifdef NEED_PIO
+.ifdef Need::PIO
 	; ----------------------------------------------------------------------------
 	; PIO
 	; ----------------------------------------------------------------------------
@@ -5044,7 +4694,7 @@ teleforth_signature:
 .endif
 
 
-.ifdef NEED_MON
+.ifdef Need::MON
 	; ----------------------------------------------------------------------------
 	; MON
 	; ----------------------------------------------------------------------------
@@ -5071,7 +4721,7 @@ teleforth_signature:
 	        jmp     NEXT
 .endif
 
-.ifdef NEED_MONCOL
+.ifdef Need::MONCOL
 	; ----------------------------------------------------------------------------
 	; MON:
 	; Compile un mot d'appel à une procédure Telemon
@@ -5093,7 +4743,7 @@ teleforth_signature:
 	        jmp     NEXT
 .endif
 
-.ifdef NEED_HRSCOL
+.ifdef Need::HRSCOL
 	; ----------------------------------------------------------------------------
 	; HRS:
 	; Utilisé uniquement par les vocabulaires GRAFX et SOUNDS
@@ -5170,7 +4820,7 @@ add_to_voc "FORTH"
 	; Vocabulaire GRAFX
 	; ----------------------------------------------------------------------------
 	.include "Grafx.s"
-	.endif
+.endif
 add_to_voc "FORTH"
 
 .ifdef With::WINDOWS_VOC
@@ -5178,7 +4828,7 @@ add_to_voc "FORTH"
 	; Vocabulaire WINDOWS
 	; ----------------------------------------------------------------------------
 	.include "Windows.s"
-	.endif
+.endif
 add_to_voc "FORTH"
 
 .ifdef With::CLOCK
@@ -5403,33 +5053,39 @@ declare "CR"
         .word   EMIT
         .word   SEMIS
 
-; ----------------------------------------------------------------------------
-; CLS
-; ----------------------------------------------------------------------------
-declare "CLS"
-        .word   DOCOL
-        .word   LIT
-        .word   $0C
-        .word   EMIT
-        .word   SEMIS
+.ifdef Need::CLS
+	; ----------------------------------------------------------------------------
+	; CLS
+	; Utilisé uniquement par LIFE
+	; ----------------------------------------------------------------------------
+	declare "CLS"
+	        .word   DOCOL
+	        .word   LIT
+	        .word   $0C
+	        .word   EMIT
+	        .word   SEMIS
+.endif
 
-; ----------------------------------------------------------------------------
-; GOTOXY
-; ----------------------------------------------------------------------------
-declare "GOTOXY"
-        .word   DOCOL
-        .word   LIT
-        .word   $1F
-        .word   EMIT
-        .word   LIT
-        .word   $40
-        .word   OR
-        .word   EMIT
-        .word   LIT
-        .word   $40
-        .word   OR
-        .word   EMIT
-        .word   SEMIS
+.ifdef Need::GOTOXY
+	; ----------------------------------------------------------------------------
+	; GOTOXY
+	; Utilisé uniquement par LIFE
+	; ----------------------------------------------------------------------------
+	declare "GOTOXY"
+	        .word   DOCOL
+	        .word   LIT
+	        .word   $1F
+	        .word   EMIT
+	        .word   LIT
+	        .word   $40
+	        .word   OR
+	        .word   EMIT
+	        .word   LIT
+	        .word   $40
+	        .word   OR
+	        .word   EMIT
+	        .word   SEMIS
+.endif
 
 ; ----------------------------------------------------------------------------
 ; ?HIRES
@@ -5671,20 +5327,26 @@ last_voc_link2 .set last_voc_link
 
 verbose 1, ""
 verbose 1, ""
-verbose 1, .sprintf("TeleForth %d.%d - %s",With::VERSION_MAJ,With::VERSION_MIN, __DATE__)
-verbose 1,          "----------------------------"
-verbose 1, .sprintf("ROM          : $%04x - $%04x", $C000, *)
-verbose 1, .sprintf("Used         : $%04x", * - ORIGIN)
-verbose 1, .sprintf("Free         : $%04x", $fff8-*)
-verbose 1,          "          --- ---"
-verbose 1, .sprintf("UAREA        : $%04x", _UAREA_)
-verbose 1, .sprintf("DOSBUFFERS   : $%04x", DOSBUFFERS)
-verbose 1, .sprintf("FIRST        : $%04x", _FIRST)
-verbose 1, .sprintf("LIMIT        : $%04x", RAM_START)
+verbose 1, .sprintf("TeleForth %d.%d  - %s",With::VERSION_MAJ,With::VERSION_MIN, __DATE__)
+verbose 1, .sprintf("Configuration  : %s", .string(With))
+verbose 1,          "------------------------------"
+verbose 1, .sprintf("ROM            : $%04x - $%04x", $C000, *)
+verbose 1, .sprintf("Used           : $%04x", * - ORIGIN)
+verbose 1, .sprintf("Free           : $%04x", $fff8-*)
+verbose 1,          "            --- ---"
+verbose 1, .sprintf("UAREA          : $%04x", _UAREA_)
+verbose 1, .sprintf("DOSBUFFERS     : $%04x", DOSBUFFERS)
+verbose 1, .sprintf("FIRST          : $%04x", _FIRST)
+verbose 1, .sprintf("LIMIT          : $%04x", RAM_START)
 
-verbose 1, .sprintf("Dictionary   : $%04x - $%04x", RAM_START, RAM_END)
+verbose 1, .sprintf("Dictionary     : $%04x - $%04x", RAM_START, RAM_END)
+verbose 1,          "            --- ---"
+verbose 1, .sprintf("Code           :  %4d", Global::Code)
+verbose 1, .sprintf("User variables :  %4d", Global::Users)
+verbose 1, .sprintf("Vocabularies   :  %4d", Global::Vocabularies)
+verbose 1, .sprintf("Words          :  %4d", Global::Words)
 
-verbose 1,          "----------------------------"
+verbose 1,          "------------------------------"
 verbose 1, ""
 verbose 1, ""
 
@@ -5699,7 +5361,9 @@ verbose 1, ""
 ; ----------------------------------------------------------------------------
         .word   teleforth_signature
 ; ----------------------------------------------------------------------------
-        .byte   $12,$EF
+;        .byte   $12,$EF
+	.byte   (With::VERSION_MAJ << 4)+(With::VERSION_MIN)
+	.byte   $EF
 ; ----------------------------------------------------------------------------
         .word   ORIGIN
         .word   virq
