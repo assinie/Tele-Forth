@@ -46,18 +46,24 @@ all: $(BUILDPATH)/$(ROM)
 
 
 $(BUILDPATH)/$(OBJ):
-	@mkdir -p $(BUILDPATH)
 	$(AS) $(ASFLAGS) -o $@ $<
 
 
+# Activer la regle suivante pour creer systematiquement 'build.inc'
+# sans faire un 'make configure'
+# $(BUILDPATH)/build.inc: configure
+
+
 $(BUILDPATH)/$(ROM): $(BUILDPATH)/$(OBJ)
-	@echo "$(ROM)"
+	@echo "Create $(ROM)"
 	$(LD) $(LDFLAGS) -o $@ $^
 ifeq ($(DEBUG),yes)
 	sed -re 's/al 00(.{4}) \.(.+)$$/\1 \2/' $(BUILDPATH)/$(PROJECT).ca.sym | sort > $(BUILDPATH)/$(PROJECT).sym
 endif
 
 configure:
+	@echo "Create $(BUILDPATH)/build.inc file"
+	@mkdir -p $(BUILDPATH)
 	@#date +'.define __DATE__ "__DATE__"'           > $(BUILDPATH)/build.inc
 	@date +'.define __DATE__ "%F %R"'               > $(BUILDPATH)/build.inc
 	@echo  ".define With TeleForth_V${VERSION}"    >> $(BUILDPATH)/build.inc
